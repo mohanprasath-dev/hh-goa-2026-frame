@@ -117,7 +117,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 					<span>Download Poster</span>
 				</button>
 
-				<ShareButton />
+				<ShareButton
+					canvasRef={canvasRef}
+					builderName={
+						mode === 'single'
+							? singleData.name || 'builder'
+							: singleData.name || 'squad'
+					}
+				/>
 			</div>
 		</div>
 	);

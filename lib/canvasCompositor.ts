@@ -1,7 +1,15 @@
 import type { SinglePosterData, TeamPosterData } from '@/types/builder';
 
-// TODO (Opus 4.6): Prompt 5 & Prompt 6 - Canvas Compositor Engine
-// Opus 4.6 will replace the vector graphic drawing logic with full SVG-to-Canvas compositing.
+/**
+ * Brand colour palette constants.
+ */
+const COLORS = {
+	deepGreen: '#0B3D2E',
+	yellow: '#FFD400',
+	pink: '#F0176D',
+	cream: '#F5F0E1',
+	white: '#FFFFFF',
+} as const;
 
 /**
  * Loads an image from Data URL or Blob URL safely for HTML5 Canvas rendering.
@@ -17,7 +25,289 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * Draws a scalloped/dashed decorative border frame on the canvas.
+ */
+function drawDecorativeBorder(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+	// Outer solid pink border
+	ctx.strokeStyle = COLORS.pink;
+	ctx.lineWidth = 12;
+	ctx.strokeRect(24, 24, w - 48, h - 48);
+
+	// Inner dashed yellow border
+	ctx.strokeStyle = COLORS.yellow;
+	ctx.lineWidth = 4;
+	ctx.setLineDash([16, 10]);
+	ctx.strokeRect(48, 48, w - 96, h - 96);
+	ctx.setLineDash([]);
+
+	// Corner accent dots — each corner gets a yellow circle + pink dot
+	const corners = [
+		[58, 58],
+		[w - 58, 58],
+		[58, h - 58],
+		[w - 58, h - 58],
+	];
+	for (const [cx, cy] of corners) {
+		ctx.beginPath();
+		ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+		ctx.fillStyle = COLORS.yellow;
+		ctx.globalAlpha = 0.8;
+		ctx.fill();
+		ctx.globalAlpha = 1;
+
+		ctx.beginPath();
+		ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+		ctx.fillStyle = COLORS.pink;
+		ctx.fill();
+	}
+}
+
+/**
+ * Draws the brand wordmark header (HACKER / गोवा pill / HOUSE + GOA 2026).
+ */
+function drawWordmarkHeader(ctx: CanvasRenderingContext2D, centerX: number, startY: number): void {
+	// "HACKER"
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.font = '900 68px Georgia, "Times New Roman", serif';
+	ctx.textAlign = 'center';
+	ctx.letterSpacing = '6px';
+	ctx.fillText('HACKER', centerX, startY);
+
+	// Devanagari गोवा pill badge
+	const pillW = 200;
+	const pillH = 56;
+	const pillX = centerX - pillW / 2;
+	const pillY = startY + 18;
+	ctx.fillStyle = COLORS.pink;
+	ctx.beginPath();
+	ctx.roundRect(pillX, pillY, pillW, pillH, 28);
+	ctx.fill();
+
+	ctx.fillStyle = COLORS.white;
+	ctx.font = 'bold 34px "Noto Sans Devanagari", sans-serif';
+	ctx.letterSpacing = '0px';
+	ctx.fillText('गोवा', centerX, pillY + 40);
+
+	// Flanking decorative dots
+	ctx.fillStyle = COLORS.yellow;
+	ctx.beginPath();
+	ctx.arc(pillX - 16, pillY + pillH / 2, 6, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(pillX + pillW + 16, pillY + pillH / 2, 6, 0, Math.PI * 2);
+	ctx.fill();
+
+	// "HOUSE"
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.font = '900 68px Georgia, "Times New Roman", serif';
+	ctx.letterSpacing = '6px';
+	ctx.fillText('HOUSE', centerX, pillY + pillH + 52);
+
+	// Thin decorative lines
+	ctx.strokeStyle = COLORS.yellow;
+	ctx.lineWidth = 3;
+	ctx.beginPath();
+	ctx.moveTo(centerX - 180, startY - 28);
+	ctx.lineTo(centerX + 180, startY - 28);
+	ctx.stroke();
+
+	// "GOA 2026" subtitle
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.font = '900 48px Georgia, "Times New Roman", serif';
+	ctx.letterSpacing = '4px';
+	ctx.fillText('GOA 2026', centerX, pillY + pillH + 110);
+	ctx.letterSpacing = '0px';
+}
+
+/**
+ * Draws a circular photo with dual ring frame, with initial-letter fallback.
+ */
+async function drawCircularPhoto(
+	ctx: CanvasRenderingContext2D,
+	photoUrl: string | null,
+	name: string,
+	centerX: number,
+	centerY: number,
+	radius: number
+): Promise<void> {
+	// Outer ring — pink
+	ctx.beginPath();
+	ctx.arc(centerX, centerY, radius + 24, 0, Math.PI * 2);
+	ctx.fillStyle = COLORS.pink;
+	ctx.fill();
+
+	// Inner ring — yellow
+	ctx.beginPath();
+	ctx.arc(centerX, centerY, radius + 12, 0, Math.PI * 2);
+	ctx.fillStyle = COLORS.yellow;
+	ctx.fill();
+
+	// Circular clip region for photo
+	ctx.save();
+	ctx.beginPath();
+	ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+	ctx.clip();
+
+	if (photoUrl) {
+		try {
+			const img = await loadImage(photoUrl);
+			ctx.drawImage(
+				img,
+				centerX - radius,
+				centerY - radius,
+				radius * 2,
+				radius * 2
+			);
+		} catch {
+			drawPhotoFallback(ctx, name, centerX, centerY, radius);
+		}
+	} else {
+		drawPhotoFallback(ctx, name, centerX, centerY, radius);
+	}
+	ctx.restore();
+}
+
+/**
+ * Draws a fallback avatar with initial letter when no photo is available.
+ */
+function drawPhotoFallback(
+	ctx: CanvasRenderingContext2D,
+	name: string,
+	centerX: number,
+	centerY: number,
+	radius: number
+): void {
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.fillRect(
+		centerX - radius,
+		centerY - radius,
+		radius * 2,
+		radius * 2
+	);
+	ctx.fillStyle = COLORS.cream;
+	ctx.font = `bold ${Math.round(radius * 0.9)}px sans-serif`;
+	ctx.textAlign = 'center';
+	ctx.fillText(
+		name ? name.charAt(0).toUpperCase() : '?',
+		centerX,
+		centerY + radius * 0.3
+	);
+}
+
+/**
+ * Draws a small decorative stamp badge in the corner of the poster.
+ */
+function drawStampBadge(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
+	// Stamp rect
+	ctx.fillStyle = COLORS.cream;
+	ctx.strokeStyle = COLORS.pink;
+	ctx.lineWidth = 2;
+	ctx.fillRect(x, y, size, size);
+	ctx.strokeRect(x, y, size, size);
+
+	// Dashed inner border
+	ctx.setLineDash([3, 2]);
+	ctx.strokeStyle = COLORS.deepGreen;
+	ctx.lineWidth = 1;
+	ctx.strokeRect(x + 6, y + 6, size - 12, size - 12);
+	ctx.setLineDash([]);
+
+	// Sun circle
+	ctx.beginPath();
+	ctx.arc(x + size / 2, y + size / 2, size * 0.15, 0, Math.PI * 2);
+	ctx.fillStyle = COLORS.yellow;
+	ctx.fill();
+
+	// Text
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.font = `bold ${Math.round(size * 0.14)}px Georgia, serif`;
+	ctx.textAlign = 'center';
+	ctx.fillText('GOA', x + size / 2, y + size * 0.28);
+	ctx.font = `bold ${Math.round(size * 0.12)}px Georgia, serif`;
+	ctx.fillText('INDIA', x + size / 2, y + size * 0.82);
+}
+
+/**
+ * Draws a simple palm tree decoration at the specified position.
+ */
+function drawPalmAccent(ctx: CanvasRenderingContext2D, x: number, y: number, scale: number): void {
+	ctx.save();
+	ctx.translate(x, y);
+	ctx.scale(scale, scale);
+	ctx.globalAlpha = 0.15;
+
+	// Trunk
+	ctx.strokeStyle = COLORS.deepGreen;
+	ctx.lineWidth = 5;
+	ctx.beginPath();
+	ctx.moveTo(0, 80);
+	ctx.quadraticCurveTo(-5, 50, 0, 10);
+	ctx.stroke();
+
+	// Fronds — green
+	ctx.lineWidth = 3;
+	ctx.beginPath();
+	ctx.moveTo(0, 10);
+	ctx.quadraticCurveTo(-30, 0, -45, 15);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(0, 10);
+	ctx.quadraticCurveTo(30, 0, 45, 15);
+	ctx.stroke();
+
+	// Fronds — yellow
+	ctx.strokeStyle = COLORS.yellow;
+	ctx.lineWidth = 2.5;
+	ctx.beginPath();
+	ctx.moveTo(0, 10);
+	ctx.quadraticCurveTo(-20, 20, -35, 30);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(0, 10);
+	ctx.quadraticCurveTo(20, 20, 35, 30);
+	ctx.stroke();
+
+	ctx.globalAlpha = 1;
+	ctx.restore();
+}
+
+/**
+ * Draws the footer bar with #FrameInGoa and hhgoa.com.
+ */
+function drawFooterBar(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	w: number,
+	h: number
+): void {
+	// Gradient-like footer bar
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.beginPath();
+	ctx.roundRect(x, y, w, h, 8);
+	ctx.fill();
+
+	// Subtle top highlight line
+	ctx.strokeStyle = COLORS.yellow;
+	ctx.lineWidth = 3;
+	ctx.beginPath();
+	ctx.moveTo(x + 8, y);
+	ctx.lineTo(x + w - 8, y);
+	ctx.stroke();
+
+	ctx.font = 'bold 36px sans-serif';
+	ctx.fillStyle = COLORS.yellow;
+	ctx.textAlign = 'left';
+	ctx.fillText('#FrameInGoa', x + 50, y + h / 2 + 13);
+
+	ctx.fillStyle = COLORS.cream;
+	ctx.textAlign = 'right';
+	ctx.fillText('hhgoa.com', x + w - 50, y + h / 2 + 13);
+}
+
+/**
  * Renders the Single Builder Poster (1200 x 1600 px).
+ * Layer compositing order: Background → Border → Header → Photo → Name → Title → Stack → Footer.
  */
 export async function renderSinglePosterCanvas(
 	data: SinglePosterData,
@@ -29,143 +319,58 @@ export async function renderSinglePosterCanvas(
 	if (!ctx) return;
 
 	// Layer 1: Background Fill
-	ctx.fillStyle = '#F5F0E1';
+	ctx.fillStyle = COLORS.cream;
 	ctx.fillRect(0, 0, 1200, 1600);
 
-	// Layer 2: Decorative Outer Border Frame
-	ctx.strokeStyle = '#F0176D';
-	ctx.lineWidth = 12;
-	ctx.strokeRect(30, 30, 1140, 1540);
+	// Layer 2: Decorative Border Frame
+	drawDecorativeBorder(ctx, 1200, 1600);
 
-	ctx.strokeStyle = '#FFD400';
-	ctx.lineWidth = 6;
-	ctx.setLineDash([20, 12]);
-	ctx.strokeRect(50, 50, 1100, 1500);
-	ctx.setLineDash([]); // Reset dash pattern
+	// Decorative palm tree accents (background, subtle)
+	drawPalmAccent(ctx, 100, 100, 1.2);
+	drawPalmAccent(ctx, 1080, 120, -1.0);
+
+	// Stamp badge in top-right area
+	drawStampBadge(ctx, 1020, 80, 100);
 
 	// Layer 3: Header Brand Wordmark
-	ctx.fillStyle = '#0B3D2E';
-	ctx.font = '900 64px serif';
-	ctx.textAlign = 'center';
-	ctx.fillText('HACKER HOUSE', 600, 150);
+	drawWordmarkHeader(ctx, 600, 180);
 
-	// Devanagari Goa Pill Badge
-	ctx.fillStyle = '#F0176D';
-	ctx.beginPath();
-	ctx.roundRect(500, 175, 200, 60, 30);
-	ctx.fill();
-
-	ctx.fillStyle = '#FFFFFF';
-	ctx.font = 'bold 36px sans-serif';
-	ctx.fillText('गोवा', 600, 218);
-
-	ctx.fillStyle = '#0B3D2E';
-	ctx.font = '900 52px serif';
-	ctx.fillText('GOA 2026', 600, 300);
-
-	// Layer 4: Profile Photo (Circular crop with dual ring frame)
-	const centerX = 600;
-	const centerY = 650;
-	const radius = 230;
-
-	// Dual Ring Frame (Pink & Yellow)
-	ctx.beginPath();
-	ctx.arc(centerX, centerY, radius + 24, 0, Math.PI * 2);
-	ctx.fillStyle = '#F0176D';
-	ctx.fill();
-
-	ctx.beginPath();
-	ctx.arc(centerX, centerY, radius + 12, 0, Math.PI * 2);
-	ctx.fillStyle = '#FFD400';
-	ctx.fill();
-
-	// Circular Photo Crop Clip
-	ctx.save();
-	ctx.beginPath();
-	ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-	ctx.clip();
-
-	if (data.photoUrl) {
-		try {
-			const img = await loadImage(data.photoUrl);
-			ctx.drawImage(
-				img,
-				centerX - radius,
-				centerY - radius,
-				radius * 2,
-				radius * 2
-			);
-		} catch {
-			// Fallback user avatar background
-			ctx.fillStyle = '#0B3D2E';
-			ctx.fillRect(
-				centerX - radius,
-				centerY - radius,
-				radius * 2,
-				radius * 2
-			);
-		}
-	} else {
-		// Fallback user avatar background
-		ctx.fillStyle = '#0B3D2E';
-		ctx.fillRect(
-			centerX - radius,
-			centerY - radius,
-			radius * 2,
-			radius * 2
-		);
-		ctx.fillStyle = '#F5F0E1';
-		ctx.font = 'bold 120px sans-serif';
-		ctx.fillText(
-			data.name ? data.name.charAt(0).toUpperCase() : '?',
-			centerX,
-			centerY + 40
-		);
-	}
-	ctx.restore();
+	// Layer 4: Profile Photo
+	await drawCircularPhoto(ctx, data.photoUrl, data.name, 600, 720, 220);
 
 	// Layer 5: Name Banner
-	ctx.fillStyle = '#0B3D2E';
+	ctx.fillStyle = COLORS.deepGreen;
 	ctx.font = 'bold 72px sans-serif';
 	ctx.textAlign = 'center';
-	ctx.fillText(data.name || 'Your Name', 600, 1000);
+	ctx.fillText(data.name || 'Your Name', 600, 1050);
 
 	// Layer 6: Builder Title Pill
 	if (data.title) {
-		ctx.fillStyle = '#FFD400';
-		ctx.beginPath();
+		ctx.font = 'bold 40px sans-serif';
 		const titleWidth = Math.max(400, ctx.measureText(data.title).width + 80);
-		ctx.roundRect(600 - titleWidth / 2, 1050, titleWidth, 76, 38);
+		ctx.fillStyle = COLORS.yellow;
+		ctx.beginPath();
+		ctx.roundRect(600 - titleWidth / 2, 1090, titleWidth, 76, 38);
 		ctx.fill();
 
-		ctx.fillStyle = '#0B3D2E';
-		ctx.font = 'bold 40px sans-serif';
-		ctx.fillText(data.title, 600, 1104);
+		ctx.fillStyle = COLORS.deepGreen;
+		ctx.fillText(data.title, 600, 1144);
 	}
 
 	// Layer 7: Stack / Role Tag
 	if (data.stack) {
-		ctx.fillStyle = '#F0176D';
+		ctx.fillStyle = COLORS.pink;
 		ctx.font = 'bold 32px sans-serif';
-		ctx.fillText(`// ${data.stack}`, 600, 1200);
+		ctx.fillText(`// ${data.stack}`, 600, 1240);
 	}
 
 	// Layer 8: Footer Bar
-	ctx.fillStyle = '#0B3D2E';
-	ctx.fillRect(50, 1420, 1100, 100);
-
-	ctx.fillStyle = '#FFD400';
-	ctx.font = 'bold 36px sans-serif';
-	ctx.textAlign = 'left';
-	ctx.fillText('#FrameInGoa', 100, 1482);
-
-	ctx.fillStyle = '#F5F0E1';
-	ctx.textAlign = 'right';
-	ctx.fillText('hhgoa.com', 1100, 1482);
+	drawFooterBar(ctx, 50, 1420, 1100, 110);
 }
 
 /**
  * Renders the Team Combine Poster (1600 x 900 px).
+ * Horizontal composite with yellow header bar, side-by-side circular photos, and footer.
  */
 export async function renderTeamPosterCanvas(
 	data: TeamPosterData,
@@ -177,22 +382,43 @@ export async function renderTeamPosterCanvas(
 	if (!ctx) return;
 
 	// Background
-	ctx.fillStyle = '#F5F0E1';
+	ctx.fillStyle = COLORS.cream;
 	ctx.fillRect(0, 0, 1600, 900);
 
+	// Border frame (adapted for landscape)
+	ctx.strokeStyle = COLORS.pink;
+	ctx.lineWidth = 8;
+	ctx.strokeRect(16, 16, 1568, 868);
+	ctx.strokeStyle = COLORS.yellow;
+	ctx.lineWidth = 3;
+	ctx.setLineDash([12, 8]);
+	ctx.strokeRect(30, 30, 1540, 840);
+	ctx.setLineDash([]);
+
 	// Top Yellow Header Bar
-	ctx.fillStyle = '#FFD400';
-	ctx.fillRect(0, 0, 1600, 140);
+	ctx.fillStyle = COLORS.yellow;
+	ctx.beginPath();
+	ctx.roundRect(30, 30, 1540, 120, [12, 12, 0, 0]);
+	ctx.fill();
 
-	ctx.fillStyle = '#0B3D2E';
-	ctx.font = '900 48px serif';
+	// Header highlight line at bottom
+	ctx.strokeStyle = COLORS.pink;
+	ctx.lineWidth = 3;
+	ctx.beginPath();
+	ctx.moveTo(30, 150);
+	ctx.lineTo(1570, 150);
+	ctx.stroke();
+
+	// Header text
+	ctx.fillStyle = COLORS.deepGreen;
+	ctx.font = '900 44px Georgia, "Times New Roman", serif';
 	ctx.textAlign = 'left';
-	ctx.fillText('HACKER HOUSE GOA 2026', 60, 88);
+	ctx.fillText('HACKER HOUSE GOA 2026', 60, 105);
 
-	ctx.fillStyle = '#F0176D';
-	ctx.font = 'bold 32px sans-serif';
+	ctx.fillStyle = COLORS.pink;
+	ctx.font = 'bold 30px sans-serif';
 	ctx.textAlign = 'right';
-	ctx.fillText('TEAM SQUAD', 1540, 88);
+	ctx.fillText('TEAM SQUAD', 1540, 105);
 
 	// Calculate team members list
 	const members = [
@@ -209,91 +435,32 @@ export async function renderTeamPosterCanvas(
 	];
 
 	const totalMembers = members.length;
-	const sectionWidth = 1600 / totalMembers;
+	const sectionWidth = 1540 / totalMembers;
+	const photoAreaTop = 160;
+	const photoAreaBottom = 770;
+	const photoAreaCenterY = (photoAreaTop + photoAreaBottom) / 2 - 20;
 
 	for (let i = 0; i < totalMembers; i++) {
 		const member = members[i];
-		const centerX = sectionWidth * i + sectionWidth / 2;
-		const centerY = 450;
-		const radius = 150;
+		const centerX = 30 + sectionWidth * i + sectionWidth / 2;
+		const centerY = photoAreaCenterY;
+		const radius = Math.min(140, sectionWidth * 0.3);
 
-		// Dual Ring
-		ctx.beginPath();
-		ctx.arc(centerX, centerY, radius + 16, 0, Math.PI * 2);
-		ctx.fillStyle = '#F0176D';
-		ctx.fill();
+		// Draw circular photo with dual ring
+		await drawCircularPhoto(ctx, member.photoUrl, member.name, centerX, centerY, radius);
 
-		ctx.beginPath();
-		ctx.arc(centerX, centerY, radius + 8, 0, Math.PI * 2);
-		ctx.fillStyle = '#FFD400';
-		ctx.fill();
-
-		// Circular Photo Clip
-		ctx.save();
-		ctx.beginPath();
-		ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-		ctx.clip();
-
-		if (member.photoUrl) {
-			try {
-				const img = await loadImage(member.photoUrl);
-				ctx.drawImage(
-					img,
-					centerX - radius,
-					centerY - radius,
-					radius * 2,
-					radius * 2
-				);
-			} catch {
-				ctx.fillStyle = '#0B3D2E';
-				ctx.fillRect(
-					centerX - radius,
-					centerY - radius,
-					radius * 2,
-					radius * 2
-				);
-			}
-		} else {
-			ctx.fillStyle = '#0B3D2E';
-			ctx.fillRect(
-				centerX - radius,
-				centerY - radius,
-				radius * 2,
-				radius * 2
-			);
-			ctx.fillStyle = '#F5F0E1';
-			ctx.font = 'bold 80px sans-serif';
-			ctx.textAlign = 'center';
-			ctx.fillText(
-				member.name ? member.name.charAt(0).toUpperCase() : '?',
-				centerX,
-				centerY + 28
-			);
-		}
-		ctx.restore();
-
-		// Label "Builder 0X"
-		ctx.fillStyle = '#F0176D';
-		ctx.font = 'bold 24px sans-serif';
+		// "BUILDER 0X" label
+		ctx.fillStyle = COLORS.pink;
+		ctx.font = 'bold 22px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText(`BUILDER 0${i + 1}`, centerX, centerY + 210);
+		ctx.fillText(`BUILDER 0${i + 1}`, centerX, centerY + radius + 60);
 
 		// Name
-		ctx.fillStyle = '#0B3D2E';
-		ctx.font = 'bold 36px sans-serif';
-		ctx.fillText(member.name, centerX, centerY + 255);
+		ctx.fillStyle = COLORS.deepGreen;
+		ctx.font = 'bold 34px sans-serif';
+		ctx.fillText(member.name, centerX, centerY + radius + 100);
 	}
 
 	// Footer Bar
-	ctx.fillStyle = '#0B3D2E';
-	ctx.fillRect(0, 810, 1600, 90);
-
-	ctx.fillStyle = '#FFD400';
-	ctx.font = 'bold 32px sans-serif';
-	ctx.textAlign = 'left';
-	ctx.fillText('#FrameInGoa', 60, 866);
-
-	ctx.fillStyle = '#F5F0E1';
-	ctx.textAlign = 'right';
-	ctx.fillText('hhgoa.com', 1540, 866);
+	drawFooterBar(ctx, 30, 780, 1540, 80);
 }
