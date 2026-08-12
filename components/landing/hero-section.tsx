@@ -1,77 +1,37 @@
-/**
- * Hero section — large editorial wordmark with poster-print shadow typography.
- * Static server component, no client-side state.
- */
+import Link from "next/link";
+import { ArrowRight, BadgeCheck } from "lucide-react";
+
 export function HeroSection() {
   return (
-    <section className="relative min-h-[85vh] sm:min-h-screen flex flex-col items-center justify-center px-4 sm:px-8 pt-20 pb-12 overflow-hidden">
-
-
-      {/* Hero Wordmark — poster-print style with hard offset shadows */}
-      <div className="relative z-20 flex flex-col items-center text-center select-none">
-        {/* "HACKER" + "गोवा" + "HOUSE" — inline on desktop, stacked on mobile */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-3 md:gap-4">
-          {/* HACKER */}
-          <h1 className="relative">
-            {/* Shadow layer */}
-            <span
-              className="absolute top-[3px] left-[3px] text-[clamp(3.5rem,12vw,8rem)] font-serif font-black italic leading-[0.9] tracking-tight text-black/25"
-              aria-hidden="true"
-            >
-              HACKER
-            </span>
-            {/* Main text */}
-            <span className="relative text-[clamp(3.5rem,12vw,8rem)] font-serif font-black italic leading-[0.9] tracking-tight text-hh-yellow">
-              HACKER
-            </span>
+    <section className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-28 pb-14 sm:pt-36 sm:pb-24">
+      <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_.9fr]">
+        <div className="relative z-10">
+          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#FFD400]/30 bg-[#07261D] px-3 py-1.5 text-[11px] font-black tracking-[0.16em] text-[#FFD400] uppercase">
+            <BadgeCheck className="h-4 w-4 text-[#F0176D]" /> Hacker House Goa 2026
+          </p>
+          <h1 className="max-w-3xl font-serif text-[clamp(3rem,9vw,6.4rem)] font-black italic leading-[.88] tracking-tight text-[#FFD400]">
+            YOUR BUILDER ID, READY TO SHARE.
           </h1>
-
-          {/* गोवा pill badge */}
-          <div className="relative -my-2 sm:my-0 sm:-mx-1 z-30">
-            {/* Shadow */}
-            <div
-              className="absolute top-[2px] left-[2px] bg-black/20 rounded-full px-4 sm:px-5 py-1.5 sm:py-2"
-              aria-hidden="true"
-            >
-              <span className="text-[clamp(2rem,7vw,4.5rem)] font-bold font-devanagari text-transparent leading-none">
-                गोवा
-              </span>
-            </div>
-            {/* Main pill */}
-            <div className="relative bg-hh-pink rounded-full px-4 sm:px-5 py-1.5 sm:py-2 transform sm:-rotate-3">
-              <span className="text-[clamp(2rem,7vw,4.5rem)] font-bold font-devanagari text-hh-yellow leading-none drop-shadow-[1px_1px_0_rgba(0,0,0,0.3)]">
-                गोवा
-              </span>
-            </div>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-[#F5F0E1]/80 sm:text-lg">
+            Make an official Hacker House Goa frame with your name, builder title, and proof-of-work stack. Built for your X profile and your team.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link href="/generate" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-[#FFD400] px-7 text-sm font-black uppercase tracking-wider text-[#0B3D2E] shadow-[0_0_32px_rgba(255,212,0,.35)] transition hover:scale-[1.02]">
+              Create your frame <ArrowRight className="h-4 w-4 text-[#F0176D]" />
+            </Link>
+            <span className="text-xs font-bold tracking-wide text-[#F5F0E1]/65">Solo builder or combine up to three teammates.</span>
           </div>
-
-          {/* HOUSE */}
-          <h1 className="relative">
-            {/* Shadow layer */}
-            <span
-              className="absolute top-[3px] left-[3px] text-[clamp(3.5rem,12vw,8rem)] font-serif font-black italic leading-[0.9] tracking-tight text-black/25"
-              aria-hidden="true"
-            >
-              HOUSE
-            </span>
-            {/* Main text */}
-            <span className="relative text-[clamp(3.5rem,12vw,8rem)] font-serif font-black italic leading-[0.9] tracking-tight text-hh-yellow">
-              HOUSE
-            </span>
-          </h1>
+          <div className="mt-8 border-l-2 border-[#F0176D] pl-4 text-xs font-bold uppercase tracking-[0.16em] text-[#F5F0E1]/80">
+            Frame generation closes 13 Aug 2026 · 11:59 PM IST
+          </div>
         </div>
-
-        {/* Sub-line: Location + Date | Studio Credit */}
-        <div className="mt-8 sm:mt-10 flex items-center gap-3 sm:gap-5 text-hh-yellow text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase font-sans">
-          <span>GOA, INDIA · 28–31 OCT 2026</span>
-          <span className="w-px h-4 bg-hh-yellow/40" aria-hidden="true" />
-          <span>2:47 PM STUDIO</span>
+        <div className="relative mx-auto w-full max-w-[350px] lg:max-w-[400px]">
+          <div className="absolute inset-4 translate-x-3 translate-y-3 rounded-[2rem] bg-[#F0176D]" />
+          <div className="relative overflow-hidden rounded-[2rem] border-4 border-[#FFD400] bg-[#07261D] p-2 shadow-2xl">
+            <img src="/brand/id-front.png" alt="Sample Hacker House Goa Builder ID frame" className="h-auto w-full rounded-[1.45rem]" />
+          </div>
+          <span className="absolute -bottom-3 -left-3 rounded-full bg-[#F5F0E1] px-4 py-2 text-[10px] font-black tracking-[.16em] text-[#0B3D2E] uppercase">Preview frame</span>
         </div>
-      </div>
-
-      {/* Scroll hint */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 opacity-50 animate-bounce">
-        <div className="w-px h-8 bg-hh-cream/50" />
       </div>
     </section>
   );

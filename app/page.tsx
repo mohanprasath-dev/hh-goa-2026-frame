@@ -1,12 +1,8 @@
 import { NavBar } from "@/components/landing/nav-bar";
 import { HeroSection } from "@/components/landing/hero-section";
-import { TaskIntro } from "@/components/landing/task-intro";
-import { SelectionStrip } from "@/components/landing/selection-strip";
 import { WhatWhySection } from "@/components/landing/WhatWhySection";
 import { LogisticsSection } from "@/components/landing/LogisticsSection";
-import { PastBuildersSection } from "@/components/landing/PastBuildersSection";
 import { FaqSection } from "@/components/landing/FaqSection";
-import { ClosingCtaSection } from "@/components/landing/ClosingCtaSection";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PalmTrees } from "@/components/brand/PalmTrees";
 import { CircularSeal } from "@/components/brand/CircularSeal";
@@ -51,15 +47,11 @@ export default function LandingPage() {
       <HeroSection />
       
       {/* Existing Task 01 Intro & Selection Step Tracker */}
-      <TaskIntro />
-      <SelectionStrip />
 
       {/* New Extended Landing Sections */}
       <WhatWhySection />
       <LogisticsSection />
-      <PastBuildersSection />
       <FaqSection />
-      <ClosingCtaSection />
 
       {/* Enhanced Themed Footer */}
       <LandingFooter />

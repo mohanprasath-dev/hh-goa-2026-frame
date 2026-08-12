@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, MapPin, Sparkles, Home, ShieldCheck, Zap } from "lucide-react";
+import { Calendar, MapPin, Home } from "lucide-react";
 
 const LOGISTICS_ITEMS = [
   {
@@ -20,12 +20,6 @@ const LOGISTICS_ITEMS = [
     value: "CO-LIVING & CO-BUILDING",
     subtext: "Stay, meals, fiber internet & perks 100% covered",
   },
-  {
-    icon: ShieldCheck,
-    title: "SELECTION",
-    value: "OPEN TRIALS & PROOF",
-    subtext: "Curated by 2:47 PM Studio for verified builders",
-  },
 ];
 
 export function LogisticsSection() {
@@ -42,7 +36,7 @@ export function LogisticsSection() {
       </div>
 
       {/* Logistics Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {LOGISTICS_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
@@ -69,18 +63,6 @@ export function LogisticsSection() {
         })}
       </div>
 
-      {/* Highlights Strip */}
-      <div className="mt-8 bg-[#07261D]/60 rounded-2xl p-4 sm:p-5 border border-[#155340] flex flex-wrap items-center justify-around gap-4 text-xs font-bold text-hh-cream/80 uppercase tracking-wider text-center">
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-hh-pink" /> 1Gbps Fiber Network
-        </div>
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-hh-yellow" /> 24/7 Hacker Lounge
-        </div>
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-hh-pink" /> Demo Night & Pitch
-        </div>
-      </div>
     </section>
   );
 }

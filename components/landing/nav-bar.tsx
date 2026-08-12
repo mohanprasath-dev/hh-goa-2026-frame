@@ -18,19 +18,14 @@ export function NavBar() {
 
       {/* Right: Nav links + CTA */}
       <div className="flex items-center gap-4 sm:gap-6">
-        <a
-          href="https://hhgoa.taskdrift.in"
-          target="_blank"
-          rel="noreferrer"
-          className="hidden sm:inline-block text-hh-cream text-xs font-bold tracking-[0.2em] uppercase hover:text-hh-yellow transition-colors min-h-[44px] flex items-center"
-        >
-          CHECK HYPE
-        </a>
+        <Link href="/verify" className="text-hh-cream text-xs font-bold tracking-[0.16em] uppercase hover:text-hh-yellow transition-colors min-h-[44px] flex items-center">
+          Verify ID
+        </Link>
         <Link
           href="/generate"
           className="inline-flex items-center justify-center min-h-[44px] px-5 py-2 rounded-full bg-hh-yellow text-hh-green font-black text-xs sm:text-sm tracking-wider uppercase shadow-[0_0_20px_rgba(255,212,0,0.3)] hover:shadow-[0_0_30px_rgba(255,212,0,0.5)] transition-all hover:scale-105 touch-manipulation"
         >
-          APPLY
+          Generate frame
         </Link>
       </div>
     </nav>
