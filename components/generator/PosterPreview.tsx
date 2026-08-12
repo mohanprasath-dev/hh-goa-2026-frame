@@ -282,7 +282,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
       {/* Builder ID badge */}
       {builderId && (
-        <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#07261D] border border-[#FFD400]/40 text-[#FFD400] text-xs font-bold shadow-md">
+        <div className="flex items-center gap-1.5 px-4 py-1.5 text-[#FFD400] text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5 text-[#F0176D]" />
           <span>VERIFIED ID: {builderId}</span>
         </div>
