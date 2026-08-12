@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { Download, Loader2, Sparkles, RefreshCw, CreditCard, QrCode, Users, Layers } from "lucide-react";
 import { fetchBuilderId } from "@/lib/compositor";
 import { renderDarkIdFront, renderDarkIdBack } from "@/lib/dark-compositor";
@@ -14,12 +14,19 @@ import type {
   TeamPosterData,
 } from "@/types/builder";
 
-interface PosterPreviewProps {
+export interface PosterPreviewProps {
   mode: GeneratorMode;
   cardStyle: CardStyle;
   onCardStyleChange?: (style: CardStyle) => void;
   singleData: SinglePosterData;
   teamData: TeamPosterData;
+}
+
+export interface PosterPreviewRef {
+  downloadActive: () => Promise<void>;
+  downloadBoth: () => Promise<void>;
+  getCanvas: () => HTMLCanvasElement | null;
+  getBuilderId: () => string | null;
 }
 
 /** Returns the CSS aspect ratio class for each card type */
@@ -43,20 +50,22 @@ function getStyleSuffix(mode: GeneratorMode, cardStyle: CardStyle): string | und
   }
 }
 
-export const PosterPreview: React.FC<PosterPreviewProps> = ({
-  mode,
-  cardStyle,
-  onCardStyleChange,
-  singleData,
-  teamData,
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isRendering, setIsRendering] = useState(false);
-  const [showLoader, setShowLoader] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloadingBoth, setIsDownloadingBoth] = useState(false);
-  const [builderId, setBuilderId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null);
+export const PosterPreview = forwardRef<PosterPreviewRef, PosterPreviewProps>(
+  ({ mode, cardStyle, onCardStyleChange, singleData, teamData }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isRendering, setIsRendering] = useState(false);
+    const [showLoader, setShowLoader] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isDownloadingBoth, setIsDownloadingBoth] = useState(false);
+    const [builderId, setBuilderId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null);
+
+    useImperativeHandle(ref, () => ({
+      downloadActive: handleDownloadActive,
+      downloadBoth: handleDownloadBoth,
+      getCanvas: () => canvasRef.current,
+      getBuilderId: () => builderId,
+    }));
 
   // Live preview render
   useEffect(() => {
@@ -330,7 +339,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       {toast && <div role="status" className={`w-full max-w-[420px] rounded-xl border px-4 py-3 text-center text-xs font-bold ${toast.error ? "border-[#F0176D]/60 bg-[#F0176D]/10 text-[#F5F0E1]" : "border-[#FFD400]/50 bg-[#FFD400]/10 text-[#FFD400]"}`}>{toast.message}</div>}
     </div>
   );
-};
+});
+PosterPreview.displayName = "PosterPreview";
 
 function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not render the credential image.")), "image/png", 1));

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { SecondaryWordmark } from "@/components/brand/SecondaryWordmark";
@@ -11,7 +11,8 @@ import { PhotoUploader } from "@/components/generator/PhotoUploader";
 import { PhotoCropper } from "@/components/generator/PhotoCropper";
 import { BuilderForm } from "@/components/generator/BuilderForm";
 import { TeamCombine } from "@/components/generator/TeamCombine";
-import { PosterPreview } from "@/components/generator/PosterPreview";
+import { PosterPreview, type PosterPreviewRef } from "@/components/generator/PosterPreview";
+import { ShareButton } from "@/components/generator/ShareButton";
 import {
   Sparkles,
   Image as ImageIcon,
@@ -22,6 +23,8 @@ import {
   Users,
   UserCheck,
   Download,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import type {
   SingleBuilder,
@@ -37,6 +40,8 @@ export default function GeneratorPage() {
   const [step, setStep] = useState<WizardStep>(1);
   const [mode, setMode] = useState<GeneratorMode>("single");
   const [cardStyle, setCardStyle] = useState<CardStyle>("dark-id-front");
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const previewRef = useRef<PosterPreviewRef>(null);
 
   // Primary Builder state
   const [builder, setBuilder] = useState<SingleBuilder>({
@@ -112,13 +117,14 @@ export default function GeneratorPage() {
       {/* Main Header Container */}
       <header className="pt-4 pb-5 px-4 text-center max-w-4xl mx-auto flex flex-col items-center gap-4 relative z-10 sm:pt-6">
         <div className="w-full flex items-center justify-between max-w-5xl mb-2">
-          <Link
-            href="/"
-            className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340]"
+          <button
+            type="button"
+            onClick={() => setShowFinishModal(true)}
+            className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340] cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Home</span>
-          </Link>
+          </button>
           <Link href="/verify" aria-label="Verify a Builder ID" className="flex min-h-[44px] items-center">
             <SecondaryWordmark width={56} className="w-10 sm:w-14 transition-transform hover:scale-105" />
           </Link>
@@ -461,13 +467,14 @@ export default function GeneratorPage() {
                 <ArrowRight className="w-4 h-4 text-[#FFD400]" />
               </button>
             ) : (
-              <Link
-                href="/"
-                className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#FFD400] bg-[#FFD400] text-[#0B3D2E] font-black text-xs uppercase tracking-wider hover:scale-105 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,212,0,0.4)]"
+              <button
+                type="button"
+                onClick={() => setShowFinishModal(true)}
+                className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#FFD400] bg-[#FFD400] text-[#0B3D2E] font-black text-xs uppercase tracking-wider hover:scale-105 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,212,0,0.4)] cursor-pointer"
               >
                 <span>Finish & Return Home</span>
                 <CheckCircle2 className="w-4 h-4 text-[#F0176D]" />
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -487,6 +494,7 @@ export default function GeneratorPage() {
           </div>
 
           <PosterPreview
+            ref={previewRef}
             mode={mode}
             cardStyle={cardStyle}
             onCardStyleChange={setCardStyle}
@@ -508,6 +516,79 @@ export default function GeneratorPage() {
           <a href="https://mohanprasath.dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors">mohanprasath.dev</a>
         </div>
       </footer>
+
+      {/* Warning Confirmation Pop-Up Modal */}
+      {showFinishModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#07261D] border-2 border-[#FFD400] rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-[0_0_50px_rgba(255,212,0,0.25)] text-center flex flex-col items-center gap-5 relative animate-in fade-in zoom-in-95 duration-200">
+            {/* Close X Button */}
+            <button
+              type="button"
+              onClick={() => setShowFinishModal(false)}
+              className="absolute top-4 right-4 text-[#F5F0E1]/60 hover:text-white transition-colors p-1 cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Warning Icon Badge */}
+            <div className="w-14 h-14 rounded-full bg-[#FFD400]/10 border border-[#FFD400]/40 flex items-center justify-center text-[#FFD400] shadow-inner">
+              <AlertTriangle className="w-8 h-8 text-[#FFD400]" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-serif font-black text-[#FFD400] uppercase tracking-wide">
+                Before Returning Home
+              </h3>
+              <p className="text-xs text-[#F5F0E1]/80 font-medium mt-2 leading-relaxed">
+                Did you download or share your official Hacker House Goa 2026 Builder Card? Choose an option below before leaving.
+              </p>
+            </div>
+
+            {/* Direct Action Options inside Pop-Up */}
+            <div className="flex flex-col gap-3 w-full pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  previewRef.current?.downloadActive();
+                }}
+                className="min-h-[48px] w-full px-4 py-2.5 rounded-xl bg-[#F0176D] text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider hover:bg-[#F0176D]/90 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(240,23,109,0.35)] cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-[#FFD400]" />
+                <span>Download Builder Card</span>
+              </button>
+
+              {previewRef.current?.getCanvas() && (
+                <ShareButton
+                  canvasRef={{ current: previewRef.current.getCanvas() }}
+                  builderName={mode === "single" ? builder.name || "builder" : builder.name || "squad"}
+                  builderId={previewRef.current.getBuilderId()}
+                  className="w-full"
+                />
+              )}
+
+              <div className="w-full h-px bg-[#155340] my-1" />
+
+              <Link
+                href="/"
+                className="min-h-[48px] w-full px-4 py-2.5 rounded-xl border border-[#FFD400] bg-[#FFD400] text-[#0B3D2E] font-black text-xs sm:text-sm uppercase tracking-wider hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4 text-[#F0176D]" />
+                <span>Yes, Confirm & Return Home</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setShowFinishModal(false)}
+                className="text-xs font-bold text-[#F5F0E1]/60 hover:text-white transition-colors py-1 cursor-pointer"
+              >
+                Cancel / Keep Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
