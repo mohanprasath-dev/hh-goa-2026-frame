@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
+import { SecondaryWordmark } from "@/components/brand/SecondaryWordmark";
 import { StampBadge } from "@/components/brand/StampBadge";
 import { PalmTrees } from "@/components/brand/PalmTrees";
 import { CircularSeal } from "@/components/brand/CircularSeal";
@@ -109,7 +110,7 @@ export default function GeneratorPage() {
       </div>
 
       {/* Main Header Container */}
-      <header className="pt-6 pb-4 px-4 text-center max-w-4xl mx-auto flex flex-col items-center gap-3 relative z-10">
+      <header className="pt-4 pb-5 px-4 text-center max-w-4xl mx-auto flex flex-col items-center gap-4 relative z-10 sm:pt-6">
         <div className="w-full flex items-center justify-between max-w-5xl mb-2">
           <Link
             href="/"
@@ -118,25 +119,25 @@ export default function GeneratorPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Home</span>
           </Link>
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FFD400]/80">
-            Hacker House Goa 2026
-          </div>
+          <Link href="/verify" aria-label="Verify a Builder ID" className="flex min-h-[44px] items-center">
+            <SecondaryWordmark width={56} className="w-10 sm:w-14 transition-transform hover:scale-105" />
+          </Link>
         </div>
 
-        <Wordmark width={280} height={75} />
+        <Wordmark width={560} className="w-full max-w-[320px] sm:max-w-[440px]" />
         <p className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#F0176D] uppercase">
           Builder ID Credential Generator 🌴
         </p>
 
         {/* Card Mode Selector: Solo Builder vs Team Squad */}
-        <div className="flex items-center gap-2 mt-2 bg-[#07261D] p-1.5 rounded-2xl border border-[#155340] shadow-xl">
+        <div className="grid w-full max-w-md grid-cols-2 gap-1.5 mt-1 bg-[#07261D] p-1.5 rounded-2xl border border-[#155340] shadow-xl">
           <button
             type="button"
             onClick={() => {
               setMode("single");
               setStep(1);
             }}
-            className={`min-h-[44px] px-5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer touch-manipulation ${
+            className={`min-h-[48px] px-2 sm:px-5 py-2 rounded-xl text-[10px] sm:text-xs font-extrabold uppercase tracking-wide flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer touch-manipulation ${
               isSolo
                 ? "bg-[#FFD400] text-[#0B3D2E] shadow-[0_0_15px_rgba(255,212,0,0.3)] scale-[1.02]"
                 : "text-[#F5F0E1]/70 hover:text-[#F5F0E1]"
@@ -152,7 +153,7 @@ export default function GeneratorPage() {
               setMode("team");
               setStep(1);
             }}
-            className={`min-h-[44px] px-5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer touch-manipulation ${
+            className={`min-h-[48px] px-2 sm:px-5 py-2 rounded-xl text-[10px] sm:text-xs font-extrabold uppercase tracking-wide flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer touch-manipulation ${
               !isSolo
                 ? "bg-[#FFD400] text-[#0B3D2E] shadow-[0_0_15px_rgba(255,212,0,0.3)] scale-[1.02]"
                 : "text-[#F5F0E1]/70 hover:text-[#F5F0E1]"
@@ -166,7 +167,7 @@ export default function GeneratorPage() {
 
       {/* Wizard Progress Bar & Step Tracker */}
       <div className="max-w-4xl mx-auto px-4 mb-8 relative z-10">
-        <div className="bg-[#07261D]/90 backdrop-blur-md border border-[#155340] rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div className="bg-[#07261D]/90 backdrop-blur-md border border-[#155340] rounded-2xl p-3 sm:p-5 shadow-xl">
           {/* Progress bar line */}
           <div className="w-full bg-[#0B3D2E] h-1.5 rounded-full overflow-hidden mb-4">
             <div
@@ -196,7 +197,7 @@ export default function GeneratorPage() {
                 >
                   <StepIcon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : isCompleted ? "text-[#FFD400]" : "opacity-60"}`} />
                   <span className="text-[10px] sm:text-xs font-black tracking-wider uppercase whitespace-nowrap">
-                    {s.label}
+                    <span className="sm:hidden">0{s.id}</span><span className="hidden sm:inline">{s.label}</span>
                   </span>
                 </button>
               );
@@ -208,7 +209,7 @@ export default function GeneratorPage() {
       {/* Generator Main Content */}
       <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
         {/* Left Column: Current Wizard Step (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col gap-6 w-full">
+        <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col gap-6 w-full">
           {/* SOLO MODE STEPS */}
           {isSolo && (
             <>
@@ -472,7 +473,7 @@ export default function GeneratorPage() {
         </div>
 
         {/* Right Column: Physical Credential Canvas Centerpiece (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col items-center gap-4 w-full sticky top-8">
+        <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
           <div className="w-full text-center">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD400] text-[#0B3D2E] text-xs font-black uppercase tracking-wider mb-1 shadow-[0_0_15px_rgba(255,212,0,0.3)]">
               <Sparkles className="w-3.5 h-3.5 text-[#F0176D]" />

@@ -236,7 +236,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       )}
 
       {/* Action Toolbar */}
-      <div className={`flex items-center gap-3 w-full ${mode === "team" ? "max-w-[480px]" : "max-w-[420px]"} pt-1`}>
+      <div className={`flex flex-col sm:flex-row items-stretch gap-3 w-full ${mode === "team" ? "max-w-[480px]" : "max-w-[420px]"} pt-1`}>
         <button
           type="button"
           onClick={handleDownloadActive}
@@ -258,6 +258,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
         </button>
 
         <ShareButton
+          className="sm:shrink-0"
           canvasRef={canvasRef}
           builderName={
             mode === "single"
