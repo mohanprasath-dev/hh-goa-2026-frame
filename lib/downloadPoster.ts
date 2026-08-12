@@ -1,14 +1,16 @@
 /**
  * Sanitizes a builder name into a safe filename slug.
+ * Optional cardStyle suffix for multi-card downloads.
  */
-export function sanitizeFilename(name: string): string {
+export function sanitizeFilename(name: string, cardStyle?: string): string {
 	const cleanName = name
 		.trim()
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-+|-+$/g, '');
 
-	return cleanName ? `hh-goa-2026-${cleanName}.png` : 'hh-goa-2026-poster.png';
+	const suffix = cardStyle ? `-${cardStyle}` : '';
+	return cleanName ? `hh-goa-2026-${cleanName}${suffix}.png` : `hh-goa-2026-poster${suffix}.png`;
 }
 
 /**
@@ -16,7 +18,8 @@ export function sanitizeFilename(name: string): string {
  */
 export async function downloadPoster(
 	canvas: HTMLCanvasElement,
-	builderName: string
+	builderName: string,
+	cardStyle?: string
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
@@ -26,7 +29,7 @@ export async function downloadPoster(
 					return;
 				}
 
-				const fileName = sanitizeFilename(builderName);
+				const fileName = sanitizeFilename(builderName, cardStyle);
 				const isIOS =
 					/iPad|iPhone|iPod/.test(navigator.userAgent) ||
 					(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

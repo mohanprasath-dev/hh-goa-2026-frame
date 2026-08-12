@@ -1,14 +1,21 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, Loader2, RefreshCw } from 'lucide-react';
+import { Download, Loader2, Sparkles } from 'lucide-react';
 import {
-	renderSinglePosterCanvas,
+	renderBuilderCard,
 	renderTeamPosterCanvas,
-} from '@/lib/canvasCompositor';
+	fetchBuilderId,
+} from '@/lib/compositor';
+import {
+	renderDarkIdFront,
+	renderDarkIdBack,
+	renderPfpFrame,
+} from '@/lib/dark-compositor';
 import { downloadPoster } from '@/lib/downloadPoster';
 import { ShareButton } from './ShareButton';
 import type {
+	CardStyle,
 	GeneratorMode,
 	SinglePosterData,
 	TeamPosterData,
@@ -16,12 +23,30 @@ import type {
 
 interface PosterPreviewProps {
 	mode: GeneratorMode;
+	cardStyle: CardStyle;
 	singleData: SinglePosterData;
 	teamData: TeamPosterData;
 }
 
+/** Returns the CSS aspect ratio class for each card type */
+function getAspectClass(cardStyle: CardStyle): string {
+	if (cardStyle === 'pfp') return 'aspect-square';
+	return 'aspect-[1024/1536]';
+}
+
+/** Returns the download filename suffix for each card type */
+function getStyleSuffix(cardStyle: CardStyle): string | undefined {
+	switch (cardStyle) {
+		case 'dark-id-front': return 'dark-front';
+		case 'dark-id-back': return 'dark-back';
+		case 'pfp': return 'pfp';
+		default: return undefined;
+	}
+}
+
 export const PosterPreview: React.FC<PosterPreviewProps> = ({
 	mode,
+	cardStyle,
 	singleData,
 	teamData,
 }) => {
@@ -29,10 +54,12 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 	const [isRendering, setIsRendering] = useState(false);
 	const [showLoader, setShowLoader] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
+	const [builderId, setBuilderId] = useState<string | null>(null);
 
+	// Live preview render — preview mode (no QR/barcode/API)
 	useEffect(() => {
 		let isCancelled = false;
-		// Prompt 9 UX rule: Subtle loader ONLY if generation exceeds 500ms
+		// Subtle loader ONLY if generation exceeds 500ms
 		const loaderTimer = setTimeout(() => {
 			if (!isCancelled) setShowLoader(true);
 		}, 500);
@@ -41,11 +68,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 			setIsRendering(true);
 			if (canvasRef.current) {
 				try {
-					if (mode === 'single') {
-						await renderSinglePosterCanvas(singleData, canvasRef.current);
-					} else {
-						await renderTeamPosterCanvas(teamData, canvasRef.current);
-					}
+					await renderCardByStyle(
+						cardStyle,
+						mode,
+						singleData,
+						teamData,
+						canvasRef.current,
+						{ mode: 'preview' }
+					);
 				} catch (err) {
 					console.error('Canvas render error:', err);
 				}
@@ -65,17 +95,36 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 			clearTimeout(loaderTimer);
 			clearTimeout(debounceTimer);
 		};
-	}, [mode, singleData, teamData]);
+	}, [mode, cardStyle, singleData, teamData]);
 
+	// Final render for download — fetches builder ID, generates QR/barcode
 	const handleDownload = async () => {
 		if (!canvasRef.current) return;
 		setIsDownloading(true);
 		try {
+			// Fetch builder ID once (cached for subsequent calls)
+			let id = builderId;
+			if (!id) {
+				const result = await fetchBuilderId();
+				id = result.builderId;
+				setBuilderId(id);
+			}
+
+			// Final render with all elements
+			await renderCardByStyle(
+				cardStyle,
+				mode,
+				singleData,
+				teamData,
+				canvasRef.current,
+				{ mode: 'final', builderId: id }
+			);
+
 			const name =
 				mode === 'single'
 					? singleData.name || 'builder'
 					: singleData.name || 'squad';
-			await downloadPoster(canvasRef.current, name);
+			await downloadPoster(canvasRef.current, name, getStyleSuffix(cardStyle));
 		} catch (err) {
 			console.error('Download failed:', err);
 		} finally {
@@ -83,10 +132,12 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 		}
 	};
 
+	const aspectClass = getAspectClass(cardStyle);
+
 	return (
 		<div className="flex flex-col items-center gap-5 w-full">
 			{/* Live Poster Canvas Container */}
-			<div className="relative w-full max-w-[420px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-4 border-[#0B3D2E]/20 bg-[#F5F0E1] flex items-center justify-center">
+			<div className={`relative w-full max-w-[420px] ${aspectClass} rounded-2xl overflow-hidden shadow-2xl border-4 border-[#0B3D2E]/20 bg-[#F5F0E1] flex items-center justify-center transition-all duration-300`}>
 				<canvas
 					ref={canvasRef}
 					className="w-full h-full object-contain transition-opacity duration-200"
@@ -100,6 +151,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 					</div>
 				)}
 			</div>
+
+			{/* Builder ID badge (shown after first export) */}
+			{builderId && (
+				<div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B3D2E] text-[#FFD400] text-xs font-bold">
+					<Sparkles className="w-3 h-3" />
+					{builderId}
+				</div>
+			)}
 
 			{/* Action Toolbar */}
 			<div className="flex items-center gap-3 w-full max-w-[420px]">
@@ -129,3 +188,43 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 		</div>
 	);
 };
+
+/* ────────────────────────────────────────────────────────────
+ * Routing helper — dispatches to the correct compositor
+ * ──────────────────────────────────────────────────────────── */
+
+interface RenderOptions {
+	mode: 'preview' | 'final';
+	builderId?: string;
+}
+
+async function renderCardByStyle(
+	cardStyle: CardStyle,
+	generatorMode: GeneratorMode,
+	singleData: SinglePosterData,
+	teamData: TeamPosterData,
+	canvas: HTMLCanvasElement,
+	options: RenderOptions
+): Promise<void> {
+	switch (cardStyle) {
+		case 'tropical':
+			if (generatorMode === 'single') {
+				await renderBuilderCard(singleData, canvas, options);
+			} else {
+				await renderTeamPosterCanvas(teamData, canvas);
+			}
+			break;
+
+		case 'dark-id-front':
+			await renderDarkIdFront(singleData, canvas, options);
+			break;
+
+		case 'dark-id-back':
+			await renderDarkIdBack(singleData, canvas, options);
+			break;
+
+		case 'pfp':
+			await renderPfpFrame(singleData, canvas);
+			break;
+	}
+}
