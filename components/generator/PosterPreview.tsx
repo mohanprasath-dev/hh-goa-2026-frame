@@ -318,6 +318,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
               ? singleData.name || "builder"
               : singleData.name || "squad"
           }
+          builderId={builderId}
         />
       </div>
 

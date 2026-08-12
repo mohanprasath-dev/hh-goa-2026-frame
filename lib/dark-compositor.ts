@@ -269,11 +269,7 @@ export async function renderDarkIdBack(
 	/* ── 3. Builder ID value — next to "BUILDER ID :" label in SYSTEM panel ── */
 	const idDisplayText = builderId.startsWith('#') ? builderId.substring(1) : builderId;
 
-	// Cover baked-in placeholder "HH/GOA/2026" with dark panel background color (#000D09)
-	ctx.fillStyle = '#000D09';
-	ctx.fillRect(BUILDER_ID_X - 2, BUILDER_ID_Y - 14, 220, 26);
-
-	// Render dynamic Builder ID text in orange (#E8871E) matching the panel design
+	// Render dynamic Builder ID text with transparent background in orange (#E8871E)
 	ctx.fillStyle = ORANGE;
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'middle';

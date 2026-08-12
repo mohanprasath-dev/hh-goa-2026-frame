@@ -7,10 +7,33 @@ import { downloadBlob } from '@/lib/downloadPoster';
 interface ShareButtonProps {
 	canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	builderName: string;
+	builderId?: string | null;
 	className?: string;
 }
 
-const SHARE_TEXT = "I'm building at Hacker House Goa 2026 🌴 #FrameInGoa";
+/**
+ * Builds custom pre-written template for sharing to X.
+ */
+function buildShareText(name: string, builderId?: string | null): string {
+	const displayName = name.trim() || 'Builder';
+	const idFormatted = builderId
+		? builderId.startsWith('#')
+			? builderId
+			: `#${builderId}`
+		: '#HH-GOA-2026';
+
+	return `🌴 Built my Hacker House Goa Builder Card!
+
+👤 ${displayName}
+🪪 Builder ID: ${idFormatted}
+
+Excited to build, ship, and connect with amazing builders in Goa. 🚀
+
+Create your own Builder Card:
+https://hhgoa.taskdrift.in
+
+#FrameInGoa #HHGoa2026`;
+}
 
 /**
  * Converts canvas to PNG Blob.
@@ -45,6 +68,7 @@ function sanitizeName(name: string): string {
 export const ShareButton: React.FC<ShareButtonProps> = ({
 	canvasRef,
 	builderName,
+	builderId,
 	className = '',
 }) => {
 	const [isSharing, setIsSharing] = useState(false);
@@ -60,17 +84,18 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 			const blob = await canvasToBlob(canvasRef.current);
 			const fileName = `hh-goa-2026-${sanitizeName(builderName)}.png`;
 			const file = new File([blob], fileName, { type: 'image/png' });
+			const shareText = buildShareText(builderName, builderId);
 
 			// Mobile path: Web Share API with file attachment
 			if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
 				await navigator.share({
-					text: SHARE_TEXT,
+					text: shareText,
 					files: [file],
 				});
 				return;
 			}
 
-			// Desktop flow: Try Vercel Blob upload to get a public URL for direct link intent
+			// Desktop flow: Try Vercel Blob upload to get a public URL for direct link intent on x.com
 			let imageUrl: string | null = null;
 			try {
 				const formData = new FormData();
@@ -89,7 +114,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 				console.warn('Vercel Blob share upload unavailable, using direct download fallback:', err);
 			}
 
-			const tweetText = encodeURIComponent(SHARE_TEXT);
+			const tweetText = encodeURIComponent(shareText);
 
 			if (imageUrl) {
 				const intentUrl = `https://x.com/intent/post?text=${tweetText}%20${encodeURIComponent(imageUrl)}`;
@@ -152,4 +177,5 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 		</div>
 	);
 };
+
 
