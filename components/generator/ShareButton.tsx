@@ -12,15 +12,17 @@ interface ShareButtonProps {
 }
 
 /**
- * Builds custom pre-written template for sharing to X.
+ * Builds custom pre-written template for sharing to X with Vercel Blob image URL.
  */
-function buildShareText(name: string, builderId?: string | null): string {
+function buildShareText(name: string, builderId?: string | null, blobUrl?: string | null): string {
   const displayName = name.trim() || "Builder";
   const idFormatted = builderId
     ? builderId.startsWith("#")
       ? builderId
       : `#${builderId}`
     : "#HH-GOA-2026";
+
+  const imageOrSiteUrl = blobUrl || "https://hhgoa.taskdrift.in";
 
   return `🌴 Just generated my Builder Card for #HHGoa2026
 
@@ -29,7 +31,7 @@ function buildShareText(name: string, builderId?: string | null): string {
 
 Building, shipping, connecting with amazing builders in Goa 🚀
 
-Get yours → https://hhgoa.taskdrift.in
+Get yours → ${imageOrSiteUrl}
 
 #FrameInGoa #HHGoa2026 #BuildInGoa`;
 }
@@ -79,29 +81,69 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
   } | null>(null);
 
   const handleShare = async () => {
+    if (!canvasRef.current) return;
+
+    setIsSharing(true);
     setNotice(null);
 
-    // Build tweet text matching exact template
-    const shareText = buildShareText(builderName, builderId);
-    const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
+    // Synchronously open window on click to prevent browser popup blockers
+    const shareWin =
+      typeof window !== "undefined"
+        ? window.open("about:blank", "_blank")
+        : null;
 
-    // INSTANT 0ms redirect to X.com
-    window.open(intentUrl, "_blank", "noopener,noreferrer");
+    try {
+      const blob = await canvasToBlob(canvasRef.current);
+      const fileName = `hh-goa-2026-${sanitizeName(builderName)}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
 
-    // Asynchronously trigger PNG download if canvas exists
-    if (canvasRef.current) {
+      // 1. Download poster PNG locally to user's device
+      downloadBlob(blob, fileName);
+
+      // 2. Upload created card PNG to Vercel Blob storage via /api/share endpoint
+      let vercelBlobUrl: string | null = null;
       try {
-        const blob = await canvasToBlob(canvasRef.current);
-        const fileName = `hh-goa-2026-${sanitizeName(builderName)}.png`;
-        downloadBlob(blob, fileName);
-      } catch (err) {
-        console.error("Card download failed:", err);
-      }
-    }
+        const formData = new FormData();
+        formData.append("poster", file);
 
-    setNotice({
-      message: "Redirected to X.com & poster downloaded!",
-    });
+        const response = await fetch("/api/share", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          vercelBlobUrl = data.url || null;
+        }
+      } catch (uploadErr) {
+        console.warn("Vercel Blob upload unavailable, using direct fallback:", uploadErr);
+      }
+
+      // 3. Construct X intent URL with Vercel Blob URL (if available) or site URL fallback
+      const shareText = buildShareText(builderName, builderId, vercelBlobUrl);
+      const tweetUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
+
+      if (shareWin && !shareWin.closed) {
+        shareWin.location.href = tweetUrl;
+      } else {
+        window.open(tweetUrl, "_blank", "noopener,noreferrer");
+      }
+
+      setNotice({
+        message: vercelBlobUrl
+          ? "Uploaded to Vercel Blob & redirected to X!"
+          : "Poster downloaded & redirected to X!",
+      });
+    } catch (err) {
+      if (shareWin && !shareWin.closed) {
+        shareWin.close();
+      }
+      const message = err instanceof Error ? err.message : "Sharing failed.";
+      setNotice({ message, isError: true });
+      console.error("Share error:", err);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   return (
@@ -117,7 +159,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         ) : (
           <Share2 className="w-4 h-4 text-[#F0176D]" />
         )}
-        <span>{isSharing ? "Sharing..." : "Share to X"}</span>
+        <span>{isSharing ? "Uploading to Vercel Blob..." : "Share to X"}</span>
       </button>
 
       {notice && (
@@ -137,4 +179,5 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     </div>
   );
 };
+
 

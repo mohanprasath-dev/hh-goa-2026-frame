@@ -53,7 +53,7 @@ export const BuilderForm: React.FC<BuilderFormProps> = ({
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-xs font-bold uppercase tracking-[0.2em] text-[#FFD400]">
-            Builder Title
+            Builder Title <span className="text-[#F0176D]">*</span>
           </label>
           <div className="flex items-center gap-1 bg-[#0B3D2E] p-1 rounded-lg border border-[#155340]">
             <button
@@ -115,7 +115,7 @@ export const BuilderForm: React.FC<BuilderFormProps> = ({
       {/* Stack / Role Input */}
       <div>
         <label className="block text-xs font-bold uppercase tracking-[0.2em] text-[#FFD400] mb-2">
-          Stack / Role <span className="text-[#F5F0E1]/40">(Optional)</span>
+          Stack / Role <span className="text-[#F0176D]">*</span>
         </label>
         <input
           type="text"

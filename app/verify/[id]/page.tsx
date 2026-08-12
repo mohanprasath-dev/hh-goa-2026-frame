@@ -48,7 +48,47 @@ export default function VerifyIdPage() {
 }
 
 function VerifiedCredential({ credential }: { credential: Credential }) {
-  return <div className="grid gap-6 sm:grid-cols-[.75fr_1fr]"><img src={credential.frontUrl} alt={`${credential.name}'s Builder ID front`} className="mx-auto w-full max-w-[240px] rounded-2xl border-2 border-[#FFD400]" /><div className="flex flex-col justify-center"><span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#FFD400] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#0B3D2E]"><BadgeCheck className="h-3.5 w-3.5 text-[#F0176D]" /> Verified credential</span><h1 className="mt-4 text-3xl font-black text-[#F5F0E1]">{credential.name}</h1><p className="mt-1 text-lg font-bold text-[#FFD400]">{credential.title}</p><p className="mt-4 font-mono text-xs font-bold text-[#F5F0E1]/70">#{credential.builderId}</p><p className="mt-2 flex items-center gap-2 text-xs text-[#F5F0E1]/65"><Calendar className="h-4 w-4 text-[#F0176D]" /> Generated {new Date(credential.generatedAt).toLocaleString()}</p><a href={credential.backUrl} target="_blank" rel="noreferrer" className="mt-5 text-xs font-black uppercase tracking-wide text-[#FFD400] hover:text-[#F0176D]">View back of credential →</a></div></div>;
+  return (
+    <div className="flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-[#0B3D2E] rounded-2xl border-2 border-[#FFD400] shadow-[0_0_30px_rgba(255,212,0,0.15)] animate-in fade-in zoom-in-95">
+      <div className="w-16 h-16 rounded-full bg-[#FFD400]/10 border-2 border-[#FFD400] flex items-center justify-center mb-4">
+        <BadgeCheck className="w-10 h-10 text-[#FFD400]" />
+      </div>
+
+      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD400] text-[#0B3D2E] text-xs font-black uppercase tracking-wider mb-3 shadow-md">
+        <span>Verified Official Credential</span>
+      </div>
+
+      <h1 className="text-2xl sm:text-3xl font-serif font-black text-[#F5F0E1] tracking-wide">
+        {credential.name}
+      </h1>
+
+      {credential.title && (
+        <p className="text-sm sm:text-base font-extrabold text-[#FFD400] uppercase tracking-wider mt-1">
+          {credential.title}
+        </p>
+      )}
+
+      <div className="mt-4 pt-4 border-t border-[#155340] w-full max-w-sm flex flex-col items-center gap-2 text-xs">
+        <div className="flex items-center justify-between w-full text-[#F5F0E1]/70 bg-[#07261D] px-4 py-2 rounded-xl border border-[#155340]">
+          <span className="font-mono font-bold text-[#FFD400]">BUILDER ID:</span>
+          <span className="font-mono font-black text-[#F5F0E1]">#{credential.builderId}</span>
+        </div>
+
+        {credential.generatedAt && (
+          <div className="flex items-center justify-between w-full text-[#F5F0E1]/70 bg-[#07261D] px-4 py-2 rounded-xl border border-[#155340]">
+            <span className="font-mono font-bold text-[#FFD400]">VERIFIED ON:</span>
+            <span className="font-bold text-[#F5F0E1]">
+              {new Date(credential.generatedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function NotFound({ builderId }: { builderId: string }) { return <div className="flex flex-col items-center rounded-2xl border border-[#F0176D]/40 bg-[#0B3D2E] px-5 py-8 text-center"><div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#F0176D] bg-[#F0176D]/10"><ShieldAlert className="h-8 w-8 text-[#F0176D]" /></div><p className="mt-5 text-[11px] font-black uppercase tracking-[.2em] text-[#F0176D]">Credential not found</p><h1 className="mt-3 break-all font-mono text-xl font-black text-[#F5F0E1]">{builderId ? `#${builderId}` : "No Builder ID supplied"}</h1><p className="mt-3 max-w-md text-sm leading-relaxed text-[#F5F0E1]/70">We couldn&apos;t find an issued Builder ID for this link. Check the ID on the frame, then try again.</p></div>; }
