@@ -218,18 +218,14 @@ export default function GeneratorPage() {
       {/* Main Header Container */}
       <header className="pt-4 pb-5 px-4 text-center max-w-4xl mx-auto flex flex-col items-center gap-4 relative z-10 sm:pt-6">
         <div className="w-full flex items-center justify-between max-w-5xl mb-2">
-          {isCreated ? (
-            <button
-              type="button"
-              onClick={() => setShowFinishModal(true)}
-              className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340] cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Return Home</span>
-            </button>
-          ) : (
-            <div />
-          )}
+          <button
+            type="button"
+            onClick={() => setShowFinishModal(true)}
+            className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340] cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </button>
           <Link href="/verify" aria-label="Verify a Builder ID" className="flex min-h-[44px] items-center">
             <SecondaryWordmark width={56} className="w-10 sm:w-14 transition-transform hover:scale-105" />
           </Link>
@@ -569,15 +565,16 @@ export default function GeneratorPage() {
 
               {/* Navigation Controls Bar */}
               <div className="flex items-center justify-between gap-4 pt-2">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={step === 1}
-                  className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#155340] bg-[#07261D] text-[#F5F0E1] font-bold text-xs uppercase tracking-wider hover:border-[#FFD400] hover:text-[#FFD400] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    disabled={step === 1}
+                    className="min-h-[48px] px-5 py-2.5 rounded-xl border border-[#155340] bg-[#07261D] text-[#F5F0E1] font-bold text-xs uppercase tracking-wider hover:border-[#FFD400] hover:text-[#FFD400] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
 
                 {step < 3 && (
                   <button
@@ -591,6 +588,7 @@ export default function GeneratorPage() {
                 )}
               </div>
             </div>
+          </div>
 
             {/* Right Column: Physical Credential Canvas Centerpiece (5 cols) */}
             <div className="order-2 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
@@ -618,7 +616,7 @@ export default function GeneratorPage() {
           </div>
         </>
       )}
-
+        
       {/* Footer Bar */}
       <footer className="mt-16 text-center text-xs font-bold text-[#F5F0E1]/70 relative z-10 py-6 border-t border-[#155340]/40">
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
