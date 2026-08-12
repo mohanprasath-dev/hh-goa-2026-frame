@@ -147,21 +147,34 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       const back = await canvasToPng(canvasRef.current);
 
       const [frontUrl, backUrl] = await Promise.all([
-        uploadCredentialImage(front, `${id.toLowerCase()}-front.png`),
-        uploadCredentialImage(back, `${id.toLowerCase()}-back.png`),
+        uploadCredentialImage(front, `${id.toLowerCase()}-front.png`).catch(() => null),
+        uploadCredentialImage(back, `${id.toLowerCase()}-back.png`).catch(() => null),
       ]);
-      const stored = await fetch("/api/credential", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ builderId: id, name: singleData.name || "Builder", title: singleData.title || "Builder", frontUrl, backUrl }) });
-      if (!stored.ok) {
-        const data = await stored.json().catch(() => ({ error: "Credential storage failed." }));
-        throw new Error(data.error);
+
+      if (frontUrl && backUrl) {
+        await fetch("/api/credential", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            builderId: id,
+            name: singleData.name || "Builder",
+            title: singleData.title || "Builder",
+            frontUrl,
+            backUrl,
+          }),
+        }).catch(() => {});
       }
 
       downloadBlob(front, sanitizeFilename(singleData.name || "builder", "front"));
       window.setTimeout(() => downloadBlob(back, sanitizeFilename(singleData.name || "builder", "back")), 300);
       await renderCardByStyle(cardStyle, mode, singleData, teamData, canvasRef.current, { mode: "preview" });
-      setToast({ message: "Front and back downloaded. Your credential is saved and verified." });
+      setToast({
+        message: frontUrl && backUrl
+          ? "Front and back downloaded. Your credential is saved and verified."
+          : "Front and back downloaded to your device.",
+      });
     } catch (error) {
-      setToast({ message: error instanceof Error ? error.message : "Could not create your credential.", error: true });
+      setToast({ message: error instanceof Error ? error.message : "Download failed.", error: true });
       await renderCardByStyle(cardStyle, mode, singleData, teamData, canvasRef.current, { mode: "preview" });
     } finally {
       setIsDownloadingBoth(false);
@@ -322,15 +335,19 @@ function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not render the credential image.")), "image/png", 1));
 }
 
-async function uploadCredentialImage(image: Blob, fileName: string): Promise<string> {
-  const formData = new FormData();
-  formData.append("poster", new File([image], fileName, { type: "image/png" }));
-  const response = await fetch("/api/share", { method: "POST", body: formData });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({ error: "Image upload failed." }));
-    throw new Error(data.error || "Credential image upload failed.");
+async function uploadCredentialImage(image: Blob, fileName: string): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    formData.append("poster", new File([image], fileName, { type: "image/png" }));
+    const response = await fetch("/api/share", { method: "POST", body: formData });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.url || null;
+  } catch {
+    return null;
   }
-  return (await response.json()).url;
 }
 
 /* ────────────────────────────────────────────────────────────

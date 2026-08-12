@@ -7,6 +7,13 @@ import { NextResponse } from 'next/server';
  * and returns the public URL for social sharing.
  */
 export async function POST(request: Request): Promise<NextResponse> {
+	if (!process.env.BLOB_READ_WRITE_TOKEN) {
+		return NextResponse.json(
+			{ error: 'Vercel Blob storage is not configured. Add BLOB_READ_WRITE_TOKEN to your environment variables.' },
+			{ status: 503 }
+		);
+	}
+
 	try {
 		const formData = await request.formData();
 		const file = formData.get('poster') as File | null;
@@ -18,7 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 			);
 		}
 
-		// Validate the file is actually a PNG image
+		// Validate the file is actually an image
 		if (!file.type.startsWith('image/')) {
 			return NextResponse.json(
 				{ error: 'Invalid file type. Only image files are accepted.' },
@@ -27,7 +34,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 		}
 
 		// Upload to Vercel Blob storage
-		const blob = await put(file.name, file, {
+		const blob = await put(file.name || 'poster.png', file, {
 			access: 'public',
 			addRandomSuffix: true,
 		});
@@ -36,22 +43,20 @@ export async function POST(request: Request): Promise<NextResponse> {
 	} catch (error) {
 		console.error('Share upload error:', error);
 
-		// Handle missing BLOB_READ_WRITE_TOKEN specifically
 		const errorMessage = error instanceof Error ? error.message : 'Unknown upload error';
-		const isMissingToken = errorMessage.includes('BLOB_READ_WRITE_TOKEN')
-			|| errorMessage.includes('token')
-			|| errorMessage.includes('unauthorized');
+		const isConfigurationIssue = /token|unauthorized|access denied|store does not exist|suspended/i.test(errorMessage);
 
-		if (isMissingToken) {
+		if (isConfigurationIssue) {
 			return NextResponse.json(
-				{ error: 'Vercel Blob storage is not configured. Set BLOB_READ_WRITE_TOKEN in your environment.' },
+				{ error: 'Vercel Blob storage token is invalid or store is not accessible.' },
 				{ status: 503 }
 			);
 		}
 
 		return NextResponse.json(
-			{ error: 'Failed to upload poster for sharing.' },
+			{ error: `Failed to upload poster for sharing: ${errorMessage}` },
 			{ status: 500 }
 		);
 	}
 }
+

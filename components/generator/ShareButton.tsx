@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Share2, Loader2, AlertCircle } from 'lucide-react';
+import { Share2, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { downloadBlob } from '@/lib/downloadPoster';
 
 interface ShareButtonProps {
 	canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -47,13 +48,13 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 	className = '',
 }) => {
 	const [isSharing, setIsSharing] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [notice, setNotice] = useState<{ message: string; isError?: boolean } | null>(null);
 
 	const handleShare = async () => {
 		if (!canvasRef.current) return;
 
 		setIsSharing(true);
-		setError(null);
+		setNotice(null);
 
 		try {
 			const blob = await canvasToBlob(canvasRef.current);
@@ -69,34 +70,49 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 				return;
 			}
 
-			// Desktop fallback: Upload to Vercel Blob → open X intent
-			const formData = new FormData();
-			formData.append('poster', file);
+			// Desktop flow: Try Vercel Blob upload to get a public URL for direct link intent
+			let imageUrl: string | null = null;
+			try {
+				const formData = new FormData();
+				formData.append('poster', file);
 
-			const response = await fetch('/api/share', {
-				method: 'POST',
-				body: formData,
-			});
+				const response = await fetch('/api/share', {
+					method: 'POST',
+					body: formData,
+				});
 
-			if (!response.ok) {
-				const data = await response.json().catch(() => ({ error: 'Upload failed.' }));
-				throw new Error(data.error || `Upload failed (${response.status}).`);
+				if (response.ok) {
+					const data = await response.json();
+					imageUrl = data.url || null;
+				}
+			} catch (err) {
+				console.warn('Vercel Blob share upload unavailable, using direct download fallback:', err);
 			}
 
-			const { url } = await response.json();
-
-			// Open X/Twitter intent with pre-filled text and image URL
 			const tweetText = encodeURIComponent(SHARE_TEXT);
-			const imageUrl = encodeURIComponent(url);
-			const intentUrl = `https://x.com/intent/post?text=${tweetText}%20${imageUrl}`;
-			window.open(intentUrl, '_blank', 'noopener,noreferrer');
+
+			if (imageUrl) {
+				const intentUrl = `https://x.com/intent/post?text=${tweetText}%20${encodeURIComponent(imageUrl)}`;
+				window.open(intentUrl, '_blank', 'noopener,noreferrer');
+			} else {
+				// Fallback when Vercel Blob storage is unconfigured or upload fails:
+				// 1. Download image to user's device
+				// 2. Open X intent for posting
+				// 3. Notify user to attach downloaded image
+				downloadBlob(blob, fileName);
+				const intentUrl = `https://x.com/intent/post?text=${tweetText}`;
+				window.open(intentUrl, '_blank', 'noopener,noreferrer');
+				setNotice({
+					message: 'Poster downloaded! Attach it to your post on X.',
+				});
+			}
 		} catch (err) {
 			// User cancellation from Web Share API is not an error
 			if (err instanceof DOMException && err.name === 'AbortError') {
 				return;
 			}
 			const message = err instanceof Error ? err.message : 'Sharing failed.';
-			setError(message);
+			setNotice({ message, isError: true });
 			console.error('Share error:', err);
 		} finally {
 			setIsSharing(false);
@@ -119,12 +135,21 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 				<span>{isSharing ? 'Sharing...' : 'Share to X'}</span>
 			</button>
 
-			{error && (
-				<p className="text-[11px] text-[#F0176D] font-semibold flex items-center gap-1 px-1">
-					<AlertCircle className="w-3 h-3 shrink-0" />
-					{error}
+			{notice && (
+				<p
+					className={`text-[11px] font-semibold flex items-center gap-1 px-1 ${
+						notice.isError ? 'text-[#F0176D]' : 'text-[#FFD400]'
+					}`}
+				>
+					{notice.isError ? (
+						<AlertCircle className="w-3.5 h-3.5 shrink-0" />
+					) : (
+						<CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#FFD400]" />
+					)}
+					<span>{notice.message}</span>
 				</p>
 			)}
 		</div>
 	);
 };
+
