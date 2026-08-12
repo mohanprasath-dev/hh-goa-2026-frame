@@ -40,9 +40,9 @@ export default function GeneratorPage() {
 
   // Primary Builder state
   const [builder, setBuilder] = useState<SingleBuilder>({
-    name: "Satoshi Nakamoto",
-    title: "Terminal Wizard",
-    stack: "Next.js / Rust / Web3",
+    name: "",
+    title: "",
+    stack: "",
     photoUrl: null,
   });
 
@@ -209,7 +209,7 @@ export default function GeneratorPage() {
       {/* Generator Main Content */}
       <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
         {/* Left Column: Current Wizard Step (7 cols) */}
-        <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col gap-6 w-full">
+        <div className="order-1 lg:order-1 lg:col-span-7 flex flex-col gap-6 w-full">
           {/* SOLO MODE STEPS */}
           {isSolo && (
             <>
@@ -396,11 +396,11 @@ export default function GeneratorPage() {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[#F5F0E1]/50 block text-[10px]">PRIMARY BUILDER:</span>
-                    <span className="text-[#F5F0E1] font-bold">{builder.name || "Satoshi Nakamoto"}</span>
+                    <span className="text-[#F5F0E1] font-bold">{builder.name || "Mohan Prasath"}</span>
                   </div>
                   <div>
                     <span className="text-[#F5F0E1]/50 block text-[10px]">TITLE:</span>
-                    <span className="text-[#FFD400] font-bold">{builder.title || "Terminal Wizard"}</span>
+                    <span className="text-[#FFD400] font-bold">{builder.title || "—"}</span>
                   </div>
                   <div>
                     <span className="text-[#F5F0E1]/50 block text-[10px]">MODE:</span>
@@ -423,7 +423,7 @@ export default function GeneratorPage() {
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between bg-[#07261D] px-3 py-1.5 rounded-lg border border-[#FFD400]/30 text-xs">
                           <span className="font-extrabold text-[#FFD400]">BUILDER 01 (LEAD)</span>
-                          <span className="font-bold text-[#F5F0E1]">{builder.name || "Satoshi Nakamoto"}</span>
+                          <span className="font-bold text-[#F5F0E1]">{builder.name || "Mohan Prasath"}</span>
                         </div>
                         {teammates.map((t, idx) => (
                           <div key={t.id} className="flex items-center justify-between bg-[#07261D] px-3 py-1.5 rounded-lg border border-[#F0176D]/40 text-xs">
@@ -473,7 +473,7 @@ export default function GeneratorPage() {
         </div>
 
         {/* Right Column: Physical Credential Canvas Centerpiece (5 cols) */}
-        <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
+        <div className="order-2 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
           <div className="w-full text-center">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD400] text-[#0B3D2E] text-xs font-black uppercase tracking-wider mb-1 shadow-[0_0_15px_rgba(255,212,0,0.3)]">
               <Sparkles className="w-3.5 h-3.5 text-[#F0176D]" />

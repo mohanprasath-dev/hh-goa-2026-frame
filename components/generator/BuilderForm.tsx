@@ -44,7 +44,7 @@ export const BuilderForm: React.FC<BuilderFormProps> = ({
           type="text"
           value={builderData.name}
           onChange={handleNameChange}
-          placeholder="e.g. Satoshi Nakamoto"
+          placeholder="e.g. Mohan Prasath"
           className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[#FFD400]/20 bg-[#0B3D2E]/80 text-[#F5F0E1] placeholder-[#F5F0E1]/30 font-medium focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/30 transition-all"
         />
       </div>
