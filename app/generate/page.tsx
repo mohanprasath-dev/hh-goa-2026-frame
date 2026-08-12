@@ -13,6 +13,7 @@ import { BuilderForm } from "@/components/generator/BuilderForm";
 import { TeamCombine } from "@/components/generator/TeamCombine";
 import { PosterPreview, type PosterPreviewRef } from "@/components/generator/PosterPreview";
 import { ShareButton } from "@/components/generator/ShareButton";
+import { CreatedShowcase } from "@/components/generator/CreatedShowcase";
 import {
   Sparkles,
   Image as ImageIcon,
@@ -25,6 +26,7 @@ import {
   Download,
   AlertTriangle,
   X,
+  Loader2,
 } from "lucide-react";
 import type {
   SingleBuilder,
@@ -41,6 +43,11 @@ export default function GeneratorPage() {
   const [mode, setMode] = useState<GeneratorMode>("single");
   const [cardStyle, setCardStyle] = useState<CardStyle>("dark-id-front");
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [isCreated, setIsCreated] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createdBuilderId, setCreatedBuilderId] = useState<string>("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const previewRef = useRef<PosterPreviewRef>(null);
 
   // Primary Builder state
@@ -67,6 +74,7 @@ export default function GeneratorPage() {
     setBuilder((prev) => ({ ...prev, photoUrl: croppedDataUrl }));
     setIsCropping(false);
     setRawPhotoUrl(null);
+    setValidationError(null);
   };
 
   const handleCropCancel = () => {
@@ -79,12 +87,105 @@ export default function GeneratorPage() {
     teammates: teammates,
   };
 
+  const validateForm = (): boolean => {
+    setValidationError(null);
+    if (!builder.photoUrl) {
+      setValidationError("Builder profile photo is mandatory. Please upload a photo.");
+      setStep(1);
+      return false;
+    }
+    if (!builder.name.trim()) {
+      setValidationError("Builder handle / name is mandatory. Please enter your name.");
+      setStep(2);
+      return false;
+    }
+    if (!builder.title.trim()) {
+      setValidationError("Builder title is mandatory. Please enter or roll a title.");
+      setStep(2);
+      return false;
+    }
+    if (!builder.stack.trim()) {
+      setValidationError("Tech stack is mandatory. Please enter your stack.");
+      setStep(2);
+      return false;
+    }
+    if (mode === "team") {
+      for (let i = 0; i < teammates.length; i++) {
+        if (!teammates[i].name.trim()) {
+          setValidationError(`Teammate 0${i + 2} name is mandatory.`);
+          setStep(2);
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   const handleNext = () => {
+    if (step === 1) {
+      if (!builder.photoUrl) {
+        setValidationError("Builder profile photo is mandatory. Please upload a photo to proceed.");
+        return;
+      }
+    } else if (step === 2) {
+      if (!builder.name.trim()) {
+        setValidationError("Builder handle / name is mandatory. Please enter your name.");
+        return;
+      }
+      if (!builder.title.trim()) {
+        setValidationError("Builder title is mandatory. Please enter or roll a title.");
+        return;
+      }
+      if (!builder.stack.trim()) {
+        setValidationError("Tech stack / role is mandatory. Please enter your stack.");
+        return;
+      }
+      if (mode === "team") {
+        for (let i = 0; i < teammates.length; i++) {
+          if (!teammates[i].name.trim()) {
+            setValidationError(`Teammate 0${i + 2} name is mandatory.`);
+            return;
+          }
+        }
+      }
+    }
+    setValidationError(null);
     if (step < 3) setStep((prev) => (prev + 1) as WizardStep);
   };
 
   const handleBack = () => {
+    setValidationError(null);
     if (step > 1) setStep((prev) => (prev - 1) as WizardStep);
+  };
+
+  const handleCreateCard = async () => {
+    if (!validateForm()) return;
+
+    setIsCreating(true);
+    setValidationError(null);
+    try {
+      const { fetchBuilderId } = await import("@/lib/compositor");
+      const { builderId } = await fetchBuilderId();
+      setCreatedBuilderId(builderId);
+
+      // Save credential record to backend API
+      await fetch("/api/credential", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          builderId,
+          name: builder.name || "Builder",
+          title: builder.title || "Builder",
+        }),
+      }).catch(() => {});
+
+      setIsCreated(true);
+    } catch (err) {
+      console.error("Create card error:", err);
+      setValidationError("Failed to create credential. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const isSolo = mode === "single";
@@ -93,12 +194,12 @@ export default function GeneratorPage() {
     ? [
         { id: 1 as WizardStep, label: "01 PHOTO", title: "Builder Photo", icon: ImageIcon },
         { id: 2 as WizardStep, label: "02 DETAILS", title: "Builder Bio", icon: UserCheck },
-        { id: 3 as WizardStep, label: "03 DOWNLOAD", title: "Share Credential", icon: Download },
+        { id: 3 as WizardStep, label: "03 CREATE", title: "Save & Export", icon: Download },
       ]
     : [
         { id: 1 as WizardStep, label: "01 LEAD BUILDER", title: "Primary Builder", icon: User },
         { id: 2 as WizardStep, label: "02 SQUAD TEAMMATES", title: "Add Teammates", icon: Users },
-        { id: 3 as WizardStep, label: "03 DOWNLOAD SQUAD", title: "Export Squad Card", icon: Download },
+        { id: 3 as WizardStep, label: "03 CREATE SQUAD", title: "Save & Export", icon: Download },
       ];
 
   return (
@@ -117,14 +218,18 @@ export default function GeneratorPage() {
       {/* Main Header Container */}
       <header className="pt-4 pb-5 px-4 text-center max-w-4xl mx-auto flex flex-col items-center gap-4 relative z-10 sm:pt-6">
         <div className="w-full flex items-center justify-between max-w-5xl mb-2">
-          <button
-            type="button"
-            onClick={() => setShowFinishModal(true)}
-            className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340] cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </button>
+          {isCreated ? (
+            <button
+              type="button"
+              onClick={() => setShowFinishModal(true)}
+              className="text-xs font-extrabold uppercase tracking-widest text-[#FFD400] hover:text-[#F0176D] transition-colors flex items-center gap-1.5 min-h-[44px] px-3 py-1 rounded-lg bg-[#07261D]/80 border border-[#155340] cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return Home</span>
+            </button>
+          ) : (
+            <div />
+          )}
           <Link href="/verify" aria-label="Verify a Builder ID" className="flex min-h-[44px] items-center">
             <SecondaryWordmark width={56} className="w-10 sm:w-14 transition-transform hover:scale-105" />
           </Link>
@@ -171,338 +276,348 @@ export default function GeneratorPage() {
         </div>
       </header>
 
-      {/* Wizard Progress Bar & Step Tracker */}
-      <div className="max-w-4xl mx-auto px-4 mb-8 relative z-10">
-        <div className="bg-[#07261D]/90 backdrop-blur-md border border-[#155340] rounded-2xl p-3 sm:p-5 shadow-xl">
-          {/* Progress bar line */}
-          <div className="w-full bg-[#0B3D2E] h-1.5 rounded-full overflow-hidden mb-4">
-            <div
-              className="bg-[#F0176D] h-full transition-all duration-300 shadow-[0_0_10px_rgba(240,23,109,0.5)]"
-              style={{ width: `${(step / 3) * 100}%` }}
-            />
-          </div>
+      {/* Main Content Area */}
+      {isCreated ? (
+        <CreatedShowcase
+          mode={mode}
+          singleData={builder}
+          teamData={teamPosterData}
+          builderId={createdBuilderId || "HH-GOA-1615"}
+          onEditAgain={() => setIsCreated(false)}
+        />
+      ) : (
+        <>
+          {/* Wizard Progress Bar & Step Tracker */}
+          <div className="max-w-4xl mx-auto px-4 mb-8 relative z-10">
+            <div className="bg-[#07261D]/90 backdrop-blur-md border border-[#155340] rounded-2xl p-3 sm:p-5 shadow-xl">
+              {/* Progress bar line */}
+              <div className="w-full bg-[#0B3D2E] h-1.5 rounded-full overflow-hidden mb-4">
+                <div
+                  className="bg-[#F0176D] h-full transition-all duration-300 shadow-[0_0_10px_rgba(240,23,109,0.5)]"
+                  style={{ width: `${(step / 3) * 100}%` }}
+                />
+              </div>
 
-          {/* Step Indicator Buttons */}
-          <div className="grid grid-cols-3 gap-2">
-            {STEPS.map((s) => {
-              const StepIcon = s.icon;
-              const isActive = step === s.id;
-              const isCompleted = step > s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setStep(s.id)}
-                  className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-2.5 px-2 sm:px-4 rounded-xl border transition-all duration-200 cursor-pointer touch-manipulation text-center ${
-                    isActive
-                      ? "bg-[#F0176D] border-[#F0176D] text-white shadow-[0_0_15px_rgba(240,23,109,0.3)] scale-[1.02]"
-                      : isCompleted
-                        ? "bg-[#07261D] border-[#FFD400]/40 text-[#FFD400] hover:border-[#FFD400]"
-                        : "bg-[#0B3D2E]/40 border-transparent text-[#F5F0E1]/40 hover:text-[#F5F0E1]/70"
-                  }`}
-                >
-                  <StepIcon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : isCompleted ? "text-[#FFD400]" : "opacity-60"}`} />
-                  <span className="text-[10px] sm:text-xs font-black tracking-wider uppercase whitespace-nowrap">
-                    <span className="sm:hidden">0{s.id}</span><span className="hidden sm:inline">{s.label}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Generator Main Content */}
-      <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
-        {/* Left Column: Current Wizard Step (7 cols) */}
-        <div className="order-1 lg:order-1 lg:col-span-7 flex flex-col gap-6 w-full">
-          {/* SOLO MODE STEPS */}
-          {isSolo && (
-            <>
-              {/* STEP 1: PHOTO */}
-              {step === 1 && (
-                <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
-                  <div className="border-b border-[#155340] pb-3 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
-                        STEP 01 OF 03
+              {/* Step Indicator Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                {STEPS.map((s) => {
+                  const StepIcon = s.icon;
+                  const isActive = step === s.id;
+                  const isCompleted = step > s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setStep(s.id)}
+                      className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-2.5 px-2 sm:px-4 rounded-xl border transition-all duration-200 cursor-pointer touch-manipulation text-center ${
+                        isActive
+                          ? "bg-[#F0176D] border-[#F0176D] text-white shadow-[0_0_15px_rgba(240,23,109,0.3)] scale-[1.02]"
+                          : isCompleted
+                            ? "bg-[#07261D] border-[#FFD400]/40 text-[#FFD400] hover:border-[#FFD400]"
+                            : "bg-[#0B3D2E]/40 border-transparent text-[#F5F0E1]/40 hover:text-[#F5F0E1]/70"
+                      }`}
+                    >
+                      <StepIcon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : isCompleted ? "text-[#FFD400]" : "opacity-60"}`} />
+                      <span className="text-[10px] sm:text-xs font-black tracking-wider uppercase whitespace-nowrap">
+                        <span className="sm:hidden">0{s.id}</span><span className="hidden sm:inline">{s.label}</span>
                       </span>
-                      <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
-                        Builder Profile Photo
-                      </h2>
-                    </div>
-                    {builder.photoUrl && !isCropping && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setBuilder((prev) => ({ ...prev, photoUrl: null }))
-                        }
-                        className="text-xs font-bold text-[#F0176D] hover:underline cursor-pointer"
-                      >
-                        Remove Photo
-                      </button>
-                    )}
-                  </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-                  {isCropping && rawPhotoUrl ? (
-                    <PhotoCropper
-                      imageSrc={rawPhotoUrl}
-                      onCropComplete={handleCropComplete}
-                      onCancel={handleCropCancel}
-                    />
-                  ) : builder.photoUrl ? (
-                    <div className="flex items-center gap-4 p-4 bg-[#0B3D2E] rounded-xl border border-[#FFD400]/30 shadow-md">
-                      <img
-                        src={builder.photoUrl}
-                        alt="Cropped profile preview"
-                        className="w-16 h-16 rounded-full object-cover border-2 border-[#F0176D] shadow-md"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-[#FFD400] flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-[#F0176D]" /> Photo Ready & Composite
-                        </p>
-                        <p className="text-xs text-[#F5F0E1]/70 mt-1">
-                          Circular format standard applied for Builder ID badge.
-                        </p>
+          {/* Generator Main Content */}
+          <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
+            {/* Left Column: Current Wizard Step (7 cols) */}
+            <div className="order-1 lg:order-1 lg:col-span-7 flex flex-col gap-6 w-full">
+              {/* Validation Warning Alert */}
+              {validationError && (
+                <div className="p-4 bg-[#F0176D]/20 border-2 border-[#F0176D] text-[#F5F0E1] text-xs font-bold rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in-95 shadow-lg">
+                  <AlertTriangle className="w-5 h-5 text-[#F0176D] shrink-0" />
+                  <span>{validationError}</span>
+                </div>
+              )}
+
+              {/* SOLO MODE STEPS */}
+              {isSolo && (
+                <>
+                  {/* STEP 1: PHOTO */}
+                  {step === 1 && (
+                    <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
+                      <div className="border-b border-[#155340] pb-3 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
+                            STEP 01 OF 03 (MANDATORY)
+                          </span>
+                          <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
+                            Builder Profile Photo *
+                          </h2>
+                        </div>
+                        {builder.photoUrl && !isCropping && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBuilder((prev) => ({ ...prev, photoUrl: null }))
+                            }
+                            className="text-xs font-bold text-[#F0176D] hover:underline cursor-pointer"
+                          >
+                            Remove Photo
+                          </button>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setBuilder((prev) => ({ ...prev, photoUrl: null }))
-                        }
-                        className="text-xs font-extrabold text-[#F0176D] hover:underline min-h-[44px] px-3 flex items-center cursor-pointer"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  ) : (
-                    <PhotoUploader
-                      label="Upload Builder Profile Photo"
-                      onPhotoSelected={handlePhotoSelected}
-                    />
-                  )}
-                </div>
-              )}
 
-              {/* STEP 2: DETAILS */}
-              {step === 2 && (
-                <div className="flex flex-col gap-5 w-full">
-                  <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl">
-                    <div className="border-b border-[#155340] pb-3 mb-5">
-                      <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
-                        STEP 02 OF 03
-                      </span>
-                      <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
-                        Builder Info & Title
-                      </h2>
-                      <p className="text-xs text-[#F5F0E1]/70 mt-1">
-                        Enter your handle/name, roll for a random builder title, and list your tech stack.
-                      </p>
-                    </div>
-
-                    <BuilderForm builderData={builder} onChange={setBuilder} />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* TEAM MODE STEPS */}
-          {!isSolo && (
-            <>
-              {/* STEP 1: PRIMARY BUILDER */}
-              {step === 1 && (
-                <div className="flex flex-col gap-5 w-full">
-                  <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
-                    <div className="border-b border-[#155340] pb-3">
-                      <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
-                        TEAM STEP 01 OF 03
-                      </span>
-                      <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
-                        Lead Builder Details
-                      </h2>
-                      <p className="text-xs text-[#F5F0E1]/70 mt-1">
-                        Enter details for the primary team lead builder (Builder 01).
-                      </p>
-                    </div>
-
-                    {/* Lead builder photo */}
-                    {isCropping && rawPhotoUrl ? (
-                      <PhotoCropper
-                        imageSrc={rawPhotoUrl}
-                        onCropComplete={handleCropComplete}
-                        onCancel={handleCropCancel}
-                      />
-                    ) : builder.photoUrl ? (
-                      <div className="flex items-center gap-4 p-4 bg-[#0B3D2E] rounded-xl border border-[#FFD400]/30 shadow-md">
-                        <img
-                          src={builder.photoUrl}
-                          alt="Lead builder"
-                          className="w-16 h-16 rounded-full object-cover border-2 border-[#F0176D] shadow-md"
+                      {isCropping && rawPhotoUrl ? (
+                        <PhotoCropper
+                          imageSrc={rawPhotoUrl}
+                          onCropComplete={handleCropComplete}
+                          onCancel={handleCropCancel}
                         />
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-[#FFD400] flex items-center gap-1.5">
-                            <CheckCircle2 className="w-4 h-4 text-[#F0176D]" /> Lead Builder Photo Uploaded
+                      ) : builder.photoUrl ? (
+                        <div className="flex items-center gap-4 p-4 bg-[#0B3D2E] rounded-xl border border-[#FFD400]/30 shadow-md">
+                          <img
+                            src={builder.photoUrl}
+                            alt="Cropped profile preview"
+                            className="w-16 h-16 rounded-full object-cover border-2 border-[#F0176D] shadow-md"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-[#FFD400] flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-[#F0176D]" /> Photo Ready & Composite
+                            </p>
+                            <p className="text-xs text-[#F5F0E1]/70 mt-1">
+                              Circular format standard applied for Builder ID badge.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBuilder((prev) => ({ ...prev, photoUrl: null }))
+                            }
+                            className="text-xs font-extrabold text-[#F0176D] hover:underline min-h-[44px] px-3 flex items-center cursor-pointer"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      ) : (
+                        <PhotoUploader
+                          label="Upload Builder Profile Photo (Required)"
+                          onPhotoSelected={handlePhotoSelected}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* STEP 2: DETAILS */}
+                  {step === 2 && (
+                    <div className="flex flex-col gap-5 w-full">
+                      <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl">
+                        <div className="border-b border-[#155340] pb-3 mb-5">
+                          <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
+                            STEP 02 OF 03 (MANDATORY)
+                          </span>
+                          <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
+                            Builder Info & Title *
+                          </h2>
+                          <p className="text-xs text-[#F5F0E1]/70 mt-1">
+                            All fields below (Handle, Title, and Stack) are mandatory.
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setBuilder((prev) => ({ ...prev, photoUrl: null }))
-                          }
-                          className="text-xs font-extrabold text-[#F0176D] hover:underline min-h-[44px] px-3 flex items-center cursor-pointer"
-                        >
-                          Change
-                        </button>
+
+                        <BuilderForm builderData={builder} onChange={setBuilder} />
                       </div>
-                    ) : (
-                      <PhotoUploader
-                        label="Upload Lead Builder (Builder 01) Photo"
-                        onPhotoSelected={handlePhotoSelected}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TEAM MODE STEPS */}
+              {!isSolo && (
+                <>
+                  {/* STEP 1: PRIMARY BUILDER */}
+                  {step === 1 && (
+                    <div className="flex flex-col gap-5 w-full">
+                      <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
+                        <div className="border-b border-[#155340] pb-3">
+                          <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
+                            TEAM STEP 01 OF 03 (MANDATORY)
+                          </span>
+                          <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
+                            Lead Builder Details *
+                          </h2>
+                          <p className="text-xs text-[#F5F0E1]/70 mt-1">
+                            Enter details for the primary team lead builder (Builder 01).
+                          </p>
+                        </div>
+
+                        {/* Lead builder photo */}
+                        {isCropping && rawPhotoUrl ? (
+                          <PhotoCropper
+                            imageSrc={rawPhotoUrl}
+                            onCropComplete={handleCropComplete}
+                            onCancel={handleCropCancel}
+                          />
+                        ) : builder.photoUrl ? (
+                          <div className="flex items-center gap-4 p-4 bg-[#0B3D2E] rounded-xl border border-[#FFD400]/30 shadow-md">
+                            <img
+                              src={builder.photoUrl}
+                              alt="Lead builder"
+                              className="w-16 h-16 rounded-full object-cover border-2 border-[#F0176D] shadow-md"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-bold text-[#FFD400] flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-[#F0176D]" /> Lead Builder Photo Uploaded
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setBuilder((prev) => ({ ...prev, photoUrl: null }))
+                              }
+                              className="text-xs font-extrabold text-[#F0176D] hover:underline min-h-[44px] px-3 flex items-center cursor-pointer"
+                            >
+                              Change
+                            </button>
+                          </div>
+                        ) : (
+                          <PhotoUploader
+                            label="Upload Lead Builder (Builder 01) Photo *"
+                            onPhotoSelected={handlePhotoSelected}
+                          />
+                        )}
+
+                        <BuilderForm builderData={builder} onChange={setBuilder} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2: SQUAD TEAMMATES */}
+                  {step === 2 && (
+                    <div className="flex flex-col gap-5 w-full">
+                      <TeamCombine
+                        teammates={teammates}
+                        onUpdateTeammates={setTeammates}
                       />
-                    )}
+                    </div>
+                  )}
+                </>
+              )}
 
-                    <BuilderForm builderData={builder} onChange={setBuilder} />
+              {/* STEP 3: CREATE & SAVE TO VERCEL BLOB */}
+              {step === 3 && (
+                <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
+                  <div className="border-b border-[#155340] pb-3">
+                    <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
+                      STEP 03 OF 03 · CREATE & VERIFY
+                    </span>
+                    <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
+                      Create Builder Credential
+                    </h2>
+                    <p className="text-xs text-[#F5F0E1]/70 mt-1">
+                      Pressing Create will assign your official Builder ID and activate verification via QR code.
+                    </p>
                   </div>
+
+                  <div className="p-4 rounded-xl bg-[#0B3D2E]/80 border border-[#FFD400]/20 flex flex-col gap-3">
+                    <div className="flex items-center gap-3 text-xs text-[#FFD400] font-bold uppercase tracking-wider">
+                      <Sparkles className="w-4 h-4 text-[#F0176D]" />
+                      <span>{isSolo ? "Solo Credential Details" : "Squad Team Details"}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-[#F5F0E1]/50 block text-[10px]">PRIMARY BUILDER:</span>
+                        <span className="text-[#F5F0E1] font-bold">{builder.name || "Mohan Prasath"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#F5F0E1]/50 block text-[10px]">TITLE:</span>
+                        <span className="text-[#FFD400] font-bold">{builder.title || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#F5F0E1]/50 block text-[10px]">STACK:</span>
+                        <span className="text-[#F5F0E1] font-bold">{builder.stack || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#F5F0E1]/50 block text-[10px]">MODE:</span>
+                        <span className="text-[#F0176D] font-bold uppercase">
+                          {isSolo ? "Solo Builder Card" : "Team Squad Card"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Create Button */}
+                  <button
+                    type="button"
+                    onClick={handleCreateCard}
+                    disabled={isCreating}
+                    className="w-full min-h-[54px] px-6 py-3 rounded-xl bg-[#F0176D] text-white font-black text-sm uppercase tracking-wider hover:bg-[#F0176D]/90 transition-all flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(240,23,109,0.4)] hover:scale-[1.02] cursor-pointer disabled:opacity-50 mt-1"
+                  >
+                    {isCreating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin text-[#FFD400]" />
+                        <span>Generating Builder Credential...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5 text-[#FFD400]" />
+                        <span>Create Builder Card</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
 
-              {/* STEP 2: SQUAD TEAMMATES */}
-              {step === 2 && (
-                <div className="flex flex-col gap-5 w-full">
-                  <TeamCombine
-                    teammates={teammates}
-                    onUpdateTeammates={setTeammates}
-                  />
-                </div>
-              )}
-            </>
-          )}
+              {/* Navigation Controls Bar */}
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={step === 1}
+                  className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#155340] bg-[#07261D] text-[#F5F0E1] font-bold text-xs uppercase tracking-wider hover:border-[#FFD400] hover:text-[#FFD400] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
 
-          {/* STEP 3: DOWNLOAD & SHARE (Common for both Solo & Team) */}
-          {step === 3 && (
-            <div className="bg-[#07261D]/90 backdrop-blur-md p-6 sm:p-7 rounded-2xl border border-[#155340] shadow-xl flex flex-col gap-5">
-              <div className="border-b border-[#155340] pb-3">
-                <span className="text-[10px] font-bold text-[#F0176D] tracking-[0.25em] uppercase block">
-                  STEP 03 OF 03 · FINAL REVEAL
+                {step < 3 && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="min-h-[48px] px-8 py-2.5 rounded-xl bg-[#F0176D] text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider hover:bg-[#F0176D]/90 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(240,23,109,0.35)] hover:scale-[1.02] cursor-pointer"
+                  >
+                    <span>Continue to Step 0{step + 1}</span>
+                    <ArrowRight className="w-4 h-4 text-[#FFD400]" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Physical Credential Canvas Centerpiece (5 cols) */}
+            <div className="order-2 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
+              <div className="w-full text-center">
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD400] text-[#0B3D2E] text-xs font-black uppercase tracking-wider mb-1 shadow-[0_0_15px_rgba(255,212,0,0.3)]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#F0176D]" />
+                  {isSolo ? "Solo Builder Credential" : "Team Squad Card Showcase"}
                 </span>
-                <h2 className="text-xl font-serif font-black text-[#FFD400] tracking-wide mt-0.5">
-                  Export & Share Credential
-                </h2>
-                <p className="text-xs text-[#F5F0E1]/70 mt-1">
-                  Your official Hacker House Goa 2026 {isSolo ? "Builder ID card" : "Team Squad card"} is generated. High-res download and share directly to X.
+                <p className="text-[11px] font-semibold text-[#F5F0E1]/60 mt-1">
+                  {isSolo
+                    ? "Click 'Flip Card' to switch between Front & Back faces"
+                    : "Real-time horizontal Squad Card preview"}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#0B3D2E]/80 border border-[#FFD400]/20 flex flex-col gap-3">
-                <div className="flex items-center gap-3 text-xs text-[#FFD400] font-bold uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 text-[#F0176D]" />
-                  <span>{isSolo ? "Solo Credential Summary" : "Squad Team Summary"}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[#F5F0E1]/50 block text-[10px]">PRIMARY BUILDER:</span>
-                    <span className="text-[#F5F0E1] font-bold">{builder.name || "Mohan Prasath"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[#F5F0E1]/50 block text-[10px]">TITLE:</span>
-                    <span className="text-[#FFD400] font-bold">{builder.title || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[#F5F0E1]/50 block text-[10px]">MODE:</span>
-                    <span className="text-[#F0176D] font-bold uppercase">
-                      {isSolo ? "Solo Builder Card" : "Team Squad Card"}
-                    </span>
-                  </div>
-                  {!isSolo && (
-                    <div>
-                      <span className="text-[#F5F0E1]/50 block text-[10px]">SQUAD SIZE:</span>
-                      <span className="text-[#F0176D] font-bold">{teammates.length + 1} Builders</span>
-                    </div>
-                  )}
-
-                  {!isSolo && (
-                    <div className="col-span-2 pt-2 border-t border-[#155340]">
-                      <span className="text-[#FFD400] block text-[10px] font-black uppercase tracking-wider mb-2">
-                        ALL SQUAD MEMBERS ({teammates.length + 1}):
-                      </span>
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between bg-[#07261D] px-3 py-1.5 rounded-lg border border-[#FFD400]/30 text-xs">
-                          <span className="font-extrabold text-[#FFD400]">BUILDER 01 (LEAD)</span>
-                          <span className="font-bold text-[#F5F0E1]">{builder.name || "Mohan Prasath"}</span>
-                        </div>
-                        {teammates.map((t, idx) => (
-                          <div key={t.id} className="flex items-center justify-between bg-[#07261D] px-3 py-1.5 rounded-lg border border-[#F0176D]/40 text-xs">
-                            <span className="font-extrabold text-[#F0176D]">BUILDER 0{idx + 2}</span>
-                            <span className="font-bold text-[#FFD400]">{t.name || `Teammate ${idx + 2}`}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PosterPreview
+                ref={previewRef}
+                mode={mode}
+                cardStyle={cardStyle}
+                onCardStyleChange={setCardStyle}
+                singleData={builder}
+                teamData={teamPosterData}
+              />
             </div>
-          )}
-
-          {/* Navigation Controls Bar */}
-          <div className="flex items-center justify-between gap-4 pt-2">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={step === 1}
-              className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#155340] bg-[#07261D] text-[#F5F0E1] font-bold text-xs uppercase tracking-wider hover:border-[#FFD400] hover:text-[#FFD400] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-
-            {step < 3 ? (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="min-h-[48px] px-8 py-2.5 rounded-xl bg-[#F0176D] text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider hover:bg-[#F0176D]/90 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(240,23,109,0.35)] hover:scale-[1.02] cursor-pointer"
-              >
-                <span>Continue to Step 0{step + 1}</span>
-                <ArrowRight className="w-4 h-4 text-[#FFD400]" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowFinishModal(true)}
-                className="min-h-[48px] px-6 py-2.5 rounded-xl border border-[#FFD400] bg-[#FFD400] text-[#0B3D2E] font-black text-xs uppercase tracking-wider hover:scale-105 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,212,0,0.4)] cursor-pointer"
-              >
-                <span>Finish & Return Home</span>
-                <CheckCircle2 className="w-4 h-4 text-[#F0176D]" />
-              </button>
-            )}
           </div>
-        </div>
-
-        {/* Right Column: Physical Credential Canvas Centerpiece (5 cols) */}
-        <div className="order-2 lg:order-2 lg:col-span-5 flex flex-col items-center gap-4 w-full lg:sticky lg:top-8">
-          <div className="w-full text-center">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD400] text-[#0B3D2E] text-xs font-black uppercase tracking-wider mb-1 shadow-[0_0_15px_rgba(255,212,0,0.3)]">
-              <Sparkles className="w-3.5 h-3.5 text-[#F0176D]" />
-              {isSolo ? "Solo Builder Credential" : "Team Squad Card Showcase"}
-            </span>
-            <p className="text-[11px] font-semibold text-[#F5F0E1]/60 mt-1">
-              {isSolo
-                ? "Click 'Flip Card' to switch between Front & Back faces"
-                : "Real-time horizontal Squad Card preview"}
-            </p>
-          </div>
-
-          <PosterPreview
-            ref={previewRef}
-            mode={mode}
-            cardStyle={cardStyle}
-            onCardStyleChange={setCardStyle}
-            singleData={builder}
-            teamData={teamPosterData}
-          />
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Footer Bar */}
       <footer className="mt-16 text-center text-xs font-bold text-[#F5F0E1]/70 relative z-10 py-6 border-t border-[#155340]/40">
