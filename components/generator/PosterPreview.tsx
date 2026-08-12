@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Download, Loader2, Sparkles, RefreshCw, CreditCard, QrCode, Users } from "lucide-react";
+import { Download, Loader2, Sparkles, RefreshCw, CreditCard, QrCode, Users, Layers } from "lucide-react";
 import { fetchBuilderId } from "@/lib/compositor";
 import { renderDarkIdFront, renderDarkIdBack } from "@/lib/dark-compositor";
-import { downloadPoster } from "@/lib/downloadPoster";
+import { downloadBlob, downloadPoster, sanitizeFilename } from "@/lib/downloadPoster";
 import { ShareButton } from "./ShareButton";
 import { StampBadge } from "@/components/brand/StampBadge";
 import type {
@@ -54,7 +54,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   const [isRendering, setIsRendering] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingBoth, setIsDownloadingBoth] = useState(false);
   const [builderId, setBuilderId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null);
 
   // Live preview render
   useEffect(() => {
@@ -125,6 +127,46 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       console.error("Download failed:", err);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadBoth = async () => {
+    if (!canvasRef.current || mode !== "single") return;
+    setIsDownloadingBoth(true);
+    setToast(null);
+    try {
+      let id = builderId;
+      if (!id) {
+        const result = await fetchBuilderId();
+        id = result.builderId;
+        setBuilderId(id);
+      }
+      await renderDarkIdFront(singleData, canvasRef.current, { mode: "final", builderId: id });
+      const front = await canvasToPng(canvasRef.current);
+      await renderDarkIdBack(singleData, canvasRef.current, { mode: "final", builderId: id });
+      const back = await canvasToPng(canvasRef.current);
+
+      const formData = new FormData();
+      formData.append("builderId", id);
+      formData.append("name", singleData.name || "Builder");
+      formData.append("title", singleData.title || "Builder");
+      formData.append("front", new File([front], "front.png", { type: "image/png" }));
+      formData.append("back", new File([back], "back.png", { type: "image/png" }));
+      const stored = await fetch("/api/credential", { method: "POST", body: formData });
+      if (!stored.ok) {
+        const data = await stored.json().catch(() => ({ error: "Credential storage failed." }));
+        throw new Error(data.error);
+      }
+
+      downloadBlob(front, sanitizeFilename(singleData.name || "builder", "front"));
+      window.setTimeout(() => downloadBlob(back, sanitizeFilename(singleData.name || "builder", "back")), 300);
+      await renderCardByStyle(cardStyle, mode, singleData, teamData, canvasRef.current, { mode: "preview" });
+      setToast({ message: "Front and back downloaded. Your credential is saved and verified." });
+    } catch (error) {
+      setToast({ message: error instanceof Error ? error.message : "Could not create your credential.", error: true });
+      await renderCardByStyle(cardStyle, mode, singleData, teamData, canvasRef.current, { mode: "preview" });
+    } finally {
+      setIsDownloadingBoth(false);
     }
   };
 
@@ -267,9 +309,20 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           }
         />
       </div>
+
+      {mode === "single" && (
+        <button type="button" onClick={handleDownloadBoth} disabled={isDownloadingBoth} className="min-h-[48px] w-full max-w-[420px] rounded-xl border border-[#FFD400]/50 bg-[#0B3D2E] px-4 text-xs font-black uppercase tracking-wide text-[#FFD400] transition hover:border-[#FFD400] hover:bg-[#07261D] disabled:opacity-50">
+          {isDownloadingBoth ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Preparing both sides…</span> : <span className="inline-flex items-center gap-2"><Layers className="h-4 w-4 text-[#F0176D]" /> Download front + back</span>}
+        </button>
+      )}
+      {toast && <div role="status" className={`w-full max-w-[420px] rounded-xl border px-4 py-3 text-center text-xs font-bold ${toast.error ? "border-[#F0176D]/60 bg-[#F0176D]/10 text-[#F5F0E1]" : "border-[#FFD400]/50 bg-[#FFD400]/10 text-[#FFD400]"}`}>{toast.message}</div>}
     </div>
   );
 };
+
+function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not render the credential image.")), "image/png", 1));
+}
 
 /* ────────────────────────────────────────────────────────────
  * Routing helper — dispatches to the correct compositor

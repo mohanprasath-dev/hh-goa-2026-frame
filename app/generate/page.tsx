@@ -510,6 +510,7 @@ export default function GeneratorPage() {
           </a>{" "}
           · #FrameInGoa
         </p>
+        <p className="mt-3 text-[11px]">Built by Mohan Prasath P · Founder, <a href="https://taskdrift.in" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">Taskdrift</a> · <a href="https://x.com/mohanprasathdev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">@mohanprasathdev</a> · <a href="https://mohanprasath.dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">mohanprasath.dev</a></p>
       </footer>
     </main>
   );

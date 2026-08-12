@@ -29,42 +29,8 @@ export async function downloadPoster(
 					return;
 				}
 
-				const fileName = sanitizeFilename(builderName, cardStyle);
-				const isIOS =
-					/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-					(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-				const blobUrl = URL.createObjectURL(blob);
-
 				try {
-					if (isIOS) {
-						// iOS Safari Fallback: Open PNG in new tab for long-press saving
-						const newWindow = window.open(blobUrl, '_blank');
-						if (!newWindow) {
-							// If popup blocked, fallback to standard link download
-							const a = document.createElement('a');
-							a.href = blobUrl;
-							a.download = fileName;
-							document.body.appendChild(a);
-							a.click();
-							document.body.removeChild(a);
-						}
-					} else {
-						// Standard Desktop Chrome/Firefox/Android Chrome trigger
-						const a = document.createElement('a');
-						a.href = blobUrl;
-						a.download = fileName;
-						a.style.display = 'none';
-						document.body.appendChild(a);
-						a.click();
-						document.body.removeChild(a);
-					}
-
-					// Revoke blob URL after 10 seconds to allow browser save completing
-					setTimeout(() => {
-						URL.revokeObjectURL(blobUrl);
-					}, 10000);
-
+					downloadBlob(blob, sanitizeFilename(builderName, cardStyle));
 					resolve();
 				} catch (err) {
 					console.error('Download trigger error:', err);
@@ -75,4 +41,17 @@ export async function downloadPoster(
 			1.0
 		);
 	});
+}
+
+/** Triggers a browser download for an already-rendered PNG Blob. */
+export function downloadBlob(blob: Blob, fileName: string): void {
+	const blobUrl = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = blobUrl;
+	a.download = fileName;
+	a.style.display = 'none';
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
 }

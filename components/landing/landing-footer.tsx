@@ -44,7 +44,7 @@ export function LandingFooter() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-hh-cream/60">
           {/* Studio Credit & Copyright */}
           <div className="flex items-center gap-2">
-            <span className="font-serif font-black text-hh-yellow italic">2:47 PM STUDIO</span>
+            <span>Built by Mohan Prasath P · Founder, <a href="https://taskdrift.in" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">Taskdrift</a> · <a href="https://x.com/mohanprasathdev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">@mohanprasathdev</a> · <a href="https://mohanprasath.dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">mohanprasath.dev</a></span>
             <span>·</span>
             <span>© 2026 Hacker House Goa. All rights reserved.</span>
           </div>

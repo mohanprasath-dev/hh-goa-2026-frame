@@ -131,6 +131,7 @@ export default function VerifyIndexPage() {
           </Link>{" "}
           · Verified Official Portal
         </p>
+        <p className="mt-3 text-[11px]">Built by Mohan Prasath P · Founder, <a href="https://taskdrift.in" className="text-[#FFD400] hover:underline">Taskdrift</a> · <a href="https://x.com/mohanprasathdev" className="text-[#FFD400] hover:underline">@mohanprasathdev</a> · <a href="https://mohanprasath.dev" className="text-[#FFD400] hover:underline">mohanprasath.dev</a></p>
       </footer>
     </main>
   );
