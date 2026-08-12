@@ -79,76 +79,29 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
   } | null>(null);
 
   const handleShare = async () => {
-    if (!canvasRef.current) return;
-
-    setIsSharing(true);
     setNotice(null);
 
-    // Synchronously open window on click to bypass popup blockers
-    const shareWin =
-      typeof window !== "undefined"
-        ? window.open("about:blank", "_blank")
-        : null;
+    // Build tweet text matching exact template
+    const shareText = buildShareText(builderName, builderId);
+    const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
 
-    try {
-      const blob = await canvasToBlob(canvasRef.current);
-      const fileName = `hh-goa-2026-${sanitizeName(builderName)}.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
-      const shareText = buildShareText(builderName, builderId);
+    // INSTANT 0ms redirect to X.com
+    window.open(intentUrl, "_blank", "noopener,noreferrer");
 
-      // Always download poster PNG so user has it ready to attach
-      downloadBlob(blob, fileName);
-
-      // Try Vercel Blob upload to get a public URL for direct link intent on x.com
-      let imageUrl: string | null = null;
+    // Asynchronously trigger PNG download if canvas exists
+    if (canvasRef.current) {
       try {
-        const formData = new FormData();
-        formData.append("poster", file);
-
-        const response = await fetch("/api/share", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          imageUrl = data.url || null;
-        }
+        const blob = await canvasToBlob(canvasRef.current);
+        const fileName = `hh-goa-2026-${sanitizeName(builderName)}.png`;
+        downloadBlob(blob, fileName);
       } catch (err) {
-        console.warn(
-          "Vercel Blob share upload unavailable, using direct download fallback:",
-          err,
-        );
+        console.error("Card download failed:", err);
       }
-
-      const tweetText = encodeURIComponent(shareText);
-      const fullUrl = imageUrl
-        ? `https://x.com/intent/post?text=${tweetText}%20${encodeURIComponent(imageUrl)}`
-        : `https://x.com/intent/post?text=${tweetText}`;
-
-      if (shareWin && !shareWin.closed) {
-        shareWin.location.href = fullUrl;
-      } else {
-        window.open(fullUrl, "_blank", "noopener,noreferrer");
-      }
-
-      setNotice({
-        message: "Poster downloaded! Redirected to X.com to post.",
-      });
-    } catch (err) {
-      if (shareWin && !shareWin.closed) {
-        shareWin.close();
-      }
-      // User cancellation from Web Share API is not an error
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
-      }
-      const message = err instanceof Error ? err.message : "Sharing failed.";
-      setNotice({ message, isError: true });
-      console.error("Share error:", err);
-    } finally {
-      setIsSharing(false);
     }
+
+    setNotice({
+      message: "Redirected to X.com & poster downloaded!",
+    });
   };
 
   return (
@@ -184,3 +137,4 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     </div>
   );
 };
+
