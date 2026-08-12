@@ -497,20 +497,16 @@ export default function GeneratorPage() {
       </div>
 
       {/* Footer Bar */}
-      <footer className="mt-16 text-center text-xs font-bold text-[#F5F0E1]/50 relative z-10">
-        <p>
-          Hacker House Goa 2026 ·{" "}
-          <a
-            href="https://hhgoa.taskdrift.in"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors"
-          >
-            hhgoa.taskdrift.in
-          </a>{" "}
-          · #FrameInGoa
-        </p>
-        <p className="mt-3 text-[11px]">Built by Mohan Prasath P · Founder, <a href="https://taskdrift.in" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">Taskdrift</a> · <a href="https://x.com/mohanprasathdev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">@mohanprasathdev</a> · <a href="https://mohanprasath.dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">mohanprasath.dev</a></p>
+      <footer className="mt-16 text-center text-xs font-bold text-[#F5F0E1]/70 relative z-10 py-6 border-t border-[#155340]/40">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
+          <span>Built by <strong className="text-[#FFD400]">Mohan Prasath P</strong> · Founder, <a href="https://taskdrift.in" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:underline">Taskdrift</a></span>
+          <span>·</span>
+          <a href="https://x.com/mohanprasathdev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors">@mohanprasathdev</a>
+          <span>·</span>
+          <a href="https://github.com/mohanprasath-dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors">@mohanprasath-dev</a>
+          <span>·</span>
+          <a href="https://mohanprasath.dev" target="_blank" rel="noreferrer" className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors">mohanprasath.dev</a>
+        </div>
       </footer>
     </main>
   );
