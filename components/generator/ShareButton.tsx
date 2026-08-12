@@ -109,12 +109,12 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 				type="button"
 				onClick={handleShare}
 				disabled={isSharing}
-				className={`min-h-[48px] px-5 py-2.5 rounded-xl bg-[#0B3D2E] text-white font-bold text-sm hover:bg-[#07261D] transition-colors flex items-center justify-center gap-2 shadow-md touch-manipulation cursor-pointer disabled:opacity-50 ${className}`}
+				className={`min-h-[48px] px-5 py-2.5 rounded-xl bg-[#07261D] border border-[#FFD400]/40 text-[#FFD400] font-extrabold text-xs sm:text-sm uppercase tracking-wider hover:bg-[#0B3D2E] hover:border-[#FFD400] transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,212,0,0.15)] hover:scale-[1.02] touch-manipulation cursor-pointer disabled:opacity-50 ${className}`}
 			>
 				{isSharing ? (
 					<Loader2 className="w-4 h-4 animate-spin text-[#FFD400]" />
 				) : (
-					<Share2 className="w-4 h-4 text-[#FFD400]" />
+					<Share2 className="w-4 h-4 text-[#F0176D]" />
 				)}
 				<span>{isSharing ? 'Sharing...' : 'Share to X'}</span>
 			</button>

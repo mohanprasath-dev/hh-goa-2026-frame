@@ -244,11 +244,9 @@ export async function renderDarkIdBack(
 
 	/* ── Resolve builder ID ── */
 	let builderId = options.builderId || '';
-	if (options.mode === 'final' && !builderId) {
+	if (!builderId) {
 		const result = await fetchBuilderId();
 		builderId = result.builderId;
-	} else if (options.mode === 'preview' && !builderId) {
-		builderId = 'HH-GOA-XXXXX';
 	}
 
 	/* ── 2. QR code — inside the dashed circle crosshair ── */

@@ -350,11 +350,9 @@ export async function renderBuilderCard(
 
 	/* ── Resolve builder ID ── */
 	let builderId = options.builderId || '';
-	if (options.mode === 'final' && !builderId) {
+	if (!builderId) {
 		const result = await fetchBuilderId();
 		builderId = result.builderId;
-	} else if (options.mode === 'preview' && !builderId) {
-		builderId = '#HH-GOA-XXXXX';
 	}
 
 	/* ── 7. QR code (left footer column, inside dashed box below SCAN TO VERIFY) ── */

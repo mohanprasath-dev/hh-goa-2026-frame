@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserPlus, Trash2, Users, User, Image as ImageIcon } from 'lucide-react';
+import { UserPlus, Trash2, Users } from 'lucide-react';
 import { PhotoUploader } from './PhotoUploader';
 import { PhotoCropper } from './PhotoCropper';
 import type { Teammate } from '@/types/builder';
@@ -54,11 +54,11 @@ export const TeamCombine: React.FC<TeamCombineProps> = ({
 	};
 
 	return (
-		<div className="flex flex-col gap-4 w-full bg-white/70 backdrop-blur-sm p-5 rounded-2xl border border-[#0B3D2E]/10 shadow-sm">
-			<div className="flex items-center justify-between pb-2 border-b border-[#0B3D2E]/10">
+		<div className="flex flex-col gap-4 w-full bg-[#07261D]/90 backdrop-blur-md p-6 rounded-2xl border border-[#155340] shadow-xl">
+			<div className="flex items-center justify-between pb-3 border-b border-[#155340]">
 				<div className="flex items-center gap-2">
-					<Users className="w-5 h-5 text-[#0B3D2E]" />
-					<h3 className="text-sm font-bold text-[#0B3D2E] uppercase tracking-wider">
+					<Users className="w-5 h-5 text-[#FFD400]" />
+					<h3 className="text-sm font-extrabold text-[#FFD400] uppercase tracking-wider">
 						Squad Teammates ({teammates.length}/2)
 					</h3>
 				</div>
@@ -66,41 +66,48 @@ export const TeamCombine: React.FC<TeamCombineProps> = ({
 					<button
 						type="button"
 						onClick={handleAddTeammate}
-						className="min-h-[36px] px-3 py-1.5 bg-[#FFD400] hover:bg-[#FFD400]/90 text-[#0B3D2E] font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation"
+						className="min-h-[38px] px-3.5 py-1.5 bg-[#FFD400] hover:bg-[#FFD400]/90 text-[#0B3D2E] font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(255,212,0,0.3)] touch-manipulation cursor-pointer"
 					>
-						<UserPlus className="w-3.5 h-3.5" /> Add Teammate
+						<UserPlus className="w-4 h-4 text-[#F0176D]" /> Add Teammate
 					</button>
 				)}
 			</div>
 
 			{teammates.length === 0 ? (
-				<div className="text-center py-6 px-4 bg-[#F5F0E1]/50 rounded-xl border border-dashed border-[#0B3D2E]/20">
-					<p className="text-xs font-semibold text-[#0B3D2E]/70">
-						Add up to 2 teammates to generate a horizontal Squad Team poster.
+				<div className="text-center py-8 px-4 bg-[#0B3D2E]/60 rounded-xl border border-dashed border-[#FFD400]/30 flex flex-col items-center gap-3">
+					<p className="text-xs font-semibold text-[#F5F0E1]/80 max-w-md">
+						Add up to 2 teammates to build your 3-builder Squad Card.
 					</p>
+					<button
+						type="button"
+						onClick={handleAddTeammate}
+						className="min-h-[44px] px-5 py-2 bg-[#F0176D] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-md cursor-pointer hover:bg-[#F0176D]/90 transition-all"
+					>
+						<UserPlus className="w-4 h-4 text-[#FFD400]" /> Add Builder 02
+					</button>
 				</div>
 			) : (
 				<div className="flex flex-col gap-4">
 					{teammates.map((teammate, idx) => (
 						<div
 							key={teammate.id}
-							className="p-4 bg-[#F5F0E1]/60 rounded-xl border border-[#0B3D2E]/15 flex flex-col gap-3"
+							className="p-4 bg-[#0B3D2E]/80 rounded-xl border border-[#155340] flex flex-col gap-3"
 						>
 							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold text-[#F0176D] uppercase">
-									Builder 0{idx + 2}
+								<span className="text-xs font-black text-[#F0176D] uppercase tracking-wider">
+									BUILDER 0{idx + 2}
 								</span>
 								<button
 									type="button"
 									onClick={() => handleRemoveTeammate(teammate.id)}
-									className="text-[#0B3D2E]/50 hover:text-[#F0176D] p-1 transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center touch-manipulation"
+									className="text-[#F5F0E1]/50 hover:text-[#F0176D] p-1 transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer"
 								>
 									<Trash2 className="w-4 h-4" />
 								</button>
 							</div>
 
 							<div>
-								<label className="block text-xs font-semibold text-[#0B3D2E] mb-1">
+								<label className="block text-xs font-bold uppercase tracking-wider text-[#FFD400] mb-1.5">
 									Teammate Name
 								</label>
 								<input
@@ -110,12 +117,12 @@ export const TeamCombine: React.FC<TeamCombineProps> = ({
 										handleNameChange(teammate.id, e.target.value)
 									}
 									placeholder={`e.g. Alex`}
-									className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[#0B3D2E]/20 bg-white text-[#0B3D2E] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]"
+									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[#FFD400]/20 bg-[#07261D] text-[#F5F0E1] text-sm font-medium focus:outline-none focus:border-[#FFD400]"
 								/>
 							</div>
 
 							<div>
-								<label className="block text-xs font-semibold text-[#0B3D2E] mb-1">
+								<label className="block text-xs font-bold uppercase tracking-wider text-[#FFD400] mb-1.5">
 									Teammate Photo
 								</label>
 								{activeCropIndex === idx && tempPhotoUrl ? (
@@ -128,14 +135,14 @@ export const TeamCombine: React.FC<TeamCombineProps> = ({
 										}}
 									/>
 								) : teammate.photoUrl ? (
-									<div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-[#0B3D2E]/15">
+									<div className="flex items-center gap-3 bg-[#07261D] p-3 rounded-xl border border-[#155340]">
 										<img
 											src={teammate.photoUrl}
 											alt={teammate.name}
 											className="w-12 h-12 rounded-full object-cover border-2 border-[#F0176D]"
 										/>
-										<span className="text-xs text-[#0B3D2E] font-medium flex-1">
-											Photo uploaded
+										<span className="text-xs text-[#F5F0E1] font-bold flex-1">
+											Photo Uploaded
 										</span>
 										<button
 											type="button"
@@ -144,7 +151,7 @@ export const TeamCombine: React.FC<TeamCombineProps> = ({
 												updated[idx].photoUrl = null;
 												onUpdateTeammates(updated);
 											}}
-											className="text-xs font-bold text-[#F0176D] hover:underline min-h-[36px] px-2 flex items-center touch-manipulation"
+											className="text-xs font-bold text-[#F0176D] hover:underline min-h-[36px] px-2 flex items-center cursor-pointer"
 										>
 											Change
 										</button>

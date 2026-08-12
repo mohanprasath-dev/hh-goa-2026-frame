@@ -14,6 +14,8 @@ const config: Config = {
 				'hh-pink': '#F0176D',
 				'hh-cream': '#F5F0E1',
 				'hh-dark': '#07261D',
+				'hh-card': '#07261D',
+				'hh-card-border': '#155340',
 			},
 			fontFamily: {
 				sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],

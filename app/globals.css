@@ -11,14 +11,31 @@
 }
 
 body {
-	color: #0B3D2E;
-	background-color: #F5F0E1;
+	color: #F5F0E1;
+	background-color: #0B3D2E;
 	font-family: var(--font-sans);
 	min-height: 100vh;
 	-webkit-font-smoothing: antialiased;
 }
 
-/* Custom touch-friendly utilities */
+/* Custom touch-friendly & theme utilities */
 .touch-manipulation {
 	touch-action: manipulation;
 }
+
+.bg-noise-overlay {
+	/* Removed noise texture for a clean plain background */
+}
+
+.shadow-credential {
+	box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 30px 2px rgba(240, 23, 109, 0.15);
+}
+
+.shadow-glow-yellow {
+	box-shadow: 0 0 25px rgba(255, 212, 0, 0.3);
+}
+
+.shadow-glow-pink {
+	box-shadow: 0 0 25px rgba(240, 23, 109, 0.35);
+}
+

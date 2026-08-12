@@ -1,4 +1,5 @@
 import type { SinglePosterData, TeamPosterData } from '@/types/builder';
+import { fitText } from './compositor';
 
 /**
  * Brand colour palette constants.
@@ -130,15 +131,15 @@ async function drawCircularPhoto(
 	centerY: number,
 	radius: number
 ): Promise<void> {
-	// Outer ring — pink
+	// Outer ring — pink (subtle accent)
 	ctx.beginPath();
-	ctx.arc(centerX, centerY, radius + 24, 0, Math.PI * 2);
+	ctx.arc(centerX, centerY, radius + 6, 0, Math.PI * 2);
 	ctx.fillStyle = COLORS.pink;
 	ctx.fill();
 
-	// Inner ring — yellow
+	// Inner ring — yellow (subtle accent)
 	ctx.beginPath();
-	ctx.arc(centerX, centerY, radius + 12, 0, Math.PI * 2);
+	ctx.arc(centerX, centerY, radius + 3, 0, Math.PI * 2);
 	ctx.fillStyle = COLORS.yellow;
 	ctx.fill();
 
@@ -151,13 +152,13 @@ async function drawCircularPhoto(
 	if (photoUrl) {
 		try {
 			const img = await loadImage(photoUrl);
-			ctx.drawImage(
-				img,
-				centerX - radius,
-				centerY - radius,
-				radius * 2,
-				radius * 2
-			);
+			const diameter = radius * 2;
+			const scale = Math.max(diameter / img.width, diameter / img.height);
+			const drawW = img.width * scale;
+			const drawH = img.height * scale;
+			const drawX = centerX - drawW / 2;
+			const drawY = centerY - drawH / 2;
+			ctx.drawImage(img, drawX, drawY, drawW, drawH);
 		} catch {
 			drawPhotoFallback(ctx, name, centerX, centerY, radius);
 		}
@@ -368,99 +369,67 @@ export async function renderSinglePosterCanvas(
 	drawFooterBar(ctx, 50, 1420, 1100, 110);
 }
 
+/** Asset path for team background */
+const TEAM_BG_SRC = '/brand/team-card.png';
+
 /**
- * Renders the Team Combine Poster (1600 x 900 px).
- * Horizontal composite with yellow header bar, side-by-side circular photos, and footer.
+ * Renders the Team Combine Poster (1536 x 1024 px).
+ * Uses static /brand/team-card.png background and renders only member photos and names.
  */
 export async function renderTeamPosterCanvas(
 	data: TeamPosterData,
 	canvas: HTMLCanvasElement
 ): Promise<void> {
-	canvas.width = 1600;
-	canvas.height = 900;
+	const W = 1536;
+	const H = 1024;
+	canvas.width = W;
+	canvas.height = H;
 	const ctx = canvas.getContext('2d');
 	if (!ctx) return;
 
-	// Background
-	ctx.fillStyle = COLORS.cream;
-	ctx.fillRect(0, 0, 1600, 900);
+	await document.fonts.ready;
 
-	// Border frame (adapted for landscape)
-	ctx.strokeStyle = COLORS.pink;
-	ctx.lineWidth = 8;
-	ctx.strokeRect(16, 16, 1568, 868);
-	ctx.strokeStyle = COLORS.yellow;
-	ctx.lineWidth = 3;
-	ctx.setLineDash([12, 8]);
-	ctx.strokeRect(30, 30, 1540, 840);
-	ctx.setLineDash([]);
+	// 1. Draw static background image (team-card.png)
+	try {
+		const bgImg = await loadImage(TEAM_BG_SRC);
+		ctx.drawImage(bgImg, 0, 0, W, H);
+	} catch (err) {
+		console.error('Failed to load team-card.png background:', err);
+		ctx.fillStyle = COLORS.deepGreen;
+		ctx.fillRect(0, 0, W, H);
+	}
 
-	// Top Yellow Header Bar
-	ctx.fillStyle = COLORS.yellow;
-	ctx.beginPath();
-	ctx.roundRect(30, 30, 1540, 120, [12, 12, 0, 0]);
-	ctx.fill();
-
-	// Header highlight line at bottom
-	ctx.strokeStyle = COLORS.pink;
-	ctx.lineWidth = 3;
-	ctx.beginPath();
-	ctx.moveTo(30, 150);
-	ctx.lineTo(1570, 150);
-	ctx.stroke();
-
-	// Header text
-	ctx.fillStyle = COLORS.deepGreen;
-	ctx.font = '900 44px Georgia, "Times New Roman", serif';
-	ctx.textAlign = 'left';
-	ctx.fillText('HACKER HOUSE GOA 2026', 60, 105);
-
-	ctx.fillStyle = COLORS.pink;
-	ctx.font = 'bold 30px sans-serif';
-	ctx.textAlign = 'right';
-	ctx.fillText('TEAM SQUAD', 1540, 105);
-
-	// Calculate team members list
+	// 2. Members data
 	const members = [
 		{
 			name: data.primaryBuilder.name || 'Builder 01',
 			photoUrl: data.primaryBuilder.photoUrl,
-			role: data.primaryBuilder.title || 'Lead Builder',
 		},
 		...data.teammates.map((t, idx) => ({
 			name: t.name || `Builder 0${idx + 2}`,
 			photoUrl: t.photoUrl,
-			role: `Builder 0${idx + 2}`,
 		})),
 	];
 
 	const totalMembers = members.length;
-	const sectionWidth = 1540 / totalMembers;
-	const photoAreaTop = 160;
-	const photoAreaBottom = 770;
-	const photoAreaCenterY = (photoAreaTop + photoAreaBottom) / 2 - 20;
+	const sectionWidth = W / totalMembers;
+	const centerY = 450;
+	const radius = Math.min(135, sectionWidth * 0.28);
 
+	// 3. Render ONLY member circular photo and name for each builder
 	for (let i = 0; i < totalMembers; i++) {
 		const member = members[i];
-		const centerX = 30 + sectionWidth * i + sectionWidth / 2;
-		const centerY = photoAreaCenterY;
-		const radius = Math.min(140, sectionWidth * 0.3);
+		const centerX = sectionWidth * i + sectionWidth / 2;
 
-		// Draw circular photo with dual ring
+		// Draw circular photo with dual ring accent
 		await drawCircularPhoto(ctx, member.photoUrl, member.name, centerX, centerY, radius);
 
-		// "BUILDER 0X" label
-		ctx.fillStyle = COLORS.pink;
-		ctx.font = 'bold 22px sans-serif';
+		// Member Name (cream color, bold vintage font)
+		const nameText = (member.name || '').toUpperCase();
+		ctx.fillStyle = COLORS.cream;
 		ctx.textAlign = 'center';
-		ctx.fillText(`BUILDER 0${i + 1}`, centerX, centerY + radius + 60);
-
-		// Name
-		ctx.fillStyle = COLORS.deepGreen;
-		ctx.font = 'bold 34px sans-serif';
-		ctx.fillText(member.name, centerX, centerY + radius + 100);
+		ctx.textBaseline = 'middle';
+		fitText(ctx, nameText, sectionWidth - 40, 36, 18, 'Georgia, "Times New Roman", serif', '900');
+		ctx.fillText(nameText, centerX, centerY + radius + 46);
 	}
-
-	// Footer Bar
-	drawFooterBar(ctx, 30, 780, 1540, 80);
 }

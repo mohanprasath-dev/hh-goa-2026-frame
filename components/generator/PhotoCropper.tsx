@@ -83,7 +83,7 @@ export const PhotoCropper: React.FC<PhotoCropperProps> = ({
 	};
 
 	return (
-		<div className="flex flex-col items-center gap-4 w-full bg-[#0B3D2E] p-4 rounded-2xl text-[#F5F0E1]">
+		<div className="flex flex-col items-center gap-4 w-full bg-[#07261D] p-5 rounded-2xl border border-[#155340] text-[#F5F0E1]">
 			<div className="relative w-full h-[280px] sm:h-[340px] rounded-xl overflow-hidden bg-black/40">
 				<Cropper
 					image={imageSrc}
