@@ -146,13 +146,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       await renderDarkIdBack(singleData, canvasRef.current, { mode: "final", builderId: id });
       const back = await canvasToPng(canvasRef.current);
 
-      const formData = new FormData();
-      formData.append("builderId", id);
-      formData.append("name", singleData.name || "Builder");
-      formData.append("title", singleData.title || "Builder");
-      formData.append("front", new File([front], "front.png", { type: "image/png" }));
-      formData.append("back", new File([back], "back.png", { type: "image/png" }));
-      const stored = await fetch("/api/credential", { method: "POST", body: formData });
+      const [frontUrl, backUrl] = await Promise.all([
+        uploadCredentialImage(front, `${id.toLowerCase()}-front.png`),
+        uploadCredentialImage(back, `${id.toLowerCase()}-back.png`),
+      ]);
+      const stored = await fetch("/api/credential", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ builderId: id, name: singleData.name || "Builder", title: singleData.title || "Builder", frontUrl, backUrl }) });
       if (!stored.ok) {
         const data = await stored.json().catch(() => ({ error: "Credential storage failed." }));
         throw new Error(data.error);
@@ -322,6 +320,17 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
 function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not render the credential image.")), "image/png", 1));
+}
+
+async function uploadCredentialImage(image: Blob, fileName: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("poster", new File([image], fileName, { type: "image/png" }));
+  const response = await fetch("/api/share", { method: "POST", body: formData });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: "Image upload failed." }));
+    throw new Error(data.error || "Credential image upload failed.");
+  }
+  return (await response.json()).url;
 }
 
 /* ────────────────────────────────────────────────────────────
