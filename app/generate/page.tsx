@@ -500,12 +500,12 @@ export default function GeneratorPage() {
         <p>
           Hacker House Goa 2026 ·{" "}
           <a
-            href="https://hhgoa.com"
+            href="https://hhgoa.taskdrift.in"
             target="_blank"
             rel="noreferrer"
             className="text-[#FFD400] hover:text-[#F0176D] hover:underline transition-colors"
           >
-            hhgoa.com
+            hhgoa.taskdrift.in
           </a>{" "}
           · #FrameInGoa
         </p>

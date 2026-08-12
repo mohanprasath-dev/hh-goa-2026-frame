@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 		title: 'HH Goa 2026 Poster Generator',
 		description:
 			'Create your customized Hacker House Goa 2026 builder poster and squad cards.',
-		url: 'https://hhgoa.com',
+		url: 'https://hhgoa.taskdrift.in',
 		siteName: 'Hacker House Goa 2026',
 		locale: 'en_US',
 		type: 'website',

@@ -19,7 +19,7 @@ export function NavBar() {
       {/* Right: Nav links + CTA */}
       <div className="flex items-center gap-4 sm:gap-6">
         <a
-          href="https://hhgoa.com"
+          href="https://hhgoa.taskdrift.in"
           target="_blank"
           rel="noreferrer"
           className="hidden sm:inline-block text-hh-cream text-xs font-bold tracking-[0.2em] uppercase hover:text-hh-yellow transition-colors min-h-[44px] flex items-center"

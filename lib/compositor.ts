@@ -358,8 +358,8 @@ export async function renderBuilderCard(
 	/* ── 7. QR code (left footer column, inside dashed box below SCAN TO VERIFY) ── */
 	try {
 		const qrUrl = builderId
-			? `https://hhgoa.com/verify/${builderId.replace('#', '')}`
-			: 'https://hhgoa.com/verify';
+			? `https://hhgoa.taskdrift.in/verify/${builderId.replace('#', '')}`
+			: 'https://hhgoa.taskdrift.in/verify';
 		const qrImg = await generateQRImage(qrUrl, QR_SIZE, GREEN);
 		const qrX = COL_LEFT_CX - QR_SIZE / 2;
 		ctx.drawImage(qrImg, qrX, QR_TOP_Y, QR_SIZE, QR_SIZE);
@@ -417,7 +417,7 @@ export async function renderBuilderCard(
 	ctx.font = "bold 24px 'Outfit', sans-serif";
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
-	ctx.fillText('#FrameInGoa  ·  hhgoa.com  ·  HH GOA 2026', CANVAS_W / 2, RIBBON_Y_CENTER);
+	ctx.fillText('#FrameInGoa  ·  hhgoa.taskdrift.in  ·  HH GOA 2026', CANVAS_W / 2, RIBBON_Y_CENTER);
 
 	return { builderId };
 }

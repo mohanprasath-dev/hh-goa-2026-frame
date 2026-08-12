@@ -252,8 +252,8 @@ export async function renderDarkIdBack(
 	/* ── 2. QR code — inside the dashed circle crosshair ── */
 	try {
 		const qrUrl = builderId
-			? `https://hhgoa.com/verify/${builderId.replace('#', '')}`
-			: 'https://hhgoa.com/verify';
+			? `https://hhgoa.taskdrift.in/verify/${builderId.replace('#', '')}`
+			: 'https://hhgoa.taskdrift.in/verify';
 		const qrImg = await generateQRImage(qrUrl, QR_RENDER_SIZE, CREAM);
 		ctx.drawImage(
 			qrImg,

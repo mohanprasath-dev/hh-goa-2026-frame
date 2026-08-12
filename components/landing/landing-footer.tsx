@@ -24,12 +24,12 @@ export function LandingFooter() {
 
           <div className="flex items-center gap-6">
             <a
-              href="https://hhgoa.com"
+              href="https://hhgoa.taskdrift.in"
               target="_blank"
               rel="noreferrer"
               className="text-hh-cream text-xs sm:text-sm font-bold tracking-wider hover:text-hh-yellow transition-colors"
             >
-              hhgoa.com
+              hhgoa.taskdrift.in
             </a>
             <Link
               href="/generate"

@@ -303,7 +303,7 @@ function drawFooterBar(
 
 	ctx.fillStyle = COLORS.cream;
 	ctx.textAlign = 'right';
-	ctx.fillText('hhgoa.com', x + w - 50, y + h / 2 + 13);
+	ctx.fillText('hhgoa.taskdrift.in', x + w - 50, y + h / 2 + 13);
 }
 
 /**
