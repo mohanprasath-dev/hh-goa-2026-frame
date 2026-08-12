@@ -13,13 +13,6 @@ interface CardStyleOption {
 
 const CARD_STYLES: CardStyleOption[] = [
 	{
-		value: 'tropical',
-		label: 'Tropical',
-		sublabel: 'Original',
-		aspect: 'aspect-[2/3]',
-		icon: '🌴',
-	},
-	{
 		value: 'dark-id-front',
 		label: 'Dark ID',
 		sublabel: 'Front',
@@ -32,13 +25,6 @@ const CARD_STYLES: CardStyleOption[] = [
 		sublabel: 'Back',
 		aspect: 'aspect-[2/3]',
 		icon: '📡',
-	},
-	{
-		value: 'pfp',
-		label: 'PFP',
-		sublabel: 'Frame',
-		aspect: 'aspect-square',
-		icon: '🖼️',
 	},
 ];
 
@@ -56,7 +42,7 @@ export const CardStyleSelector: React.FC<CardStyleSelectorProps> = ({
 			<label className="block text-xs font-bold uppercase tracking-wider text-[#0B3D2E] mb-2">
 				Card Style
 			</label>
-			<div className="grid grid-cols-4 gap-2">
+			<div className="grid grid-cols-2 gap-3">
 				{CARD_STYLES.map((style) => {
 					const isActive = selected === style.value;
 					return (

@@ -28,7 +28,6 @@ const DARK_BG = '#1A1A2E';
 /** Asset paths */
 const ID_FRONT_SRC = '/brand/id-front.png';
 const ID_BACK_SRC = '/brand/id-back.png';
-const PFP_FRAME_SRC = '/brand/pfp-frame.png';
 
 /* ────────────────────────────────────────────────────────────
  * FRONT CARD GEOMETRY (1024×1536)
@@ -63,11 +62,11 @@ const TEXT_MAX_W = TEXT_X_RIGHT - TEXT_X_LEFT; // 300px
 const TEXT_X_CENTER = (TEXT_X_LEFT + TEXT_X_RIGHT) / 2;
 
 /** Name value — in the empty zone below the BUILDER label (y=617) and line (y=700) */
-const NAME_Y = 645;
+const NAME_Y = 680;
 /** Role/Stack value — in the empty zone below the ROLE / STACK label (y=783) and line (y=874) */
-const ROLE_Y = 835;
+const ROLE_Y = 860;
 /** Builder Title value — in the empty zone below the BUILDER TITLE label (y=960) and line (y=1043) */
-const TITLE_Y = 1000;
+const TITLE_Y = 1025;
 
 /* ────────────────────────────────────────────────────────────
  * BACK CARD GEOMETRY (1024×1536)
@@ -81,8 +80,8 @@ const BACK_H = 1536;
  * Crosshair center measured from the actual asset.
  */
 const QR_CX = 850;
-const QR_CY = 740;
-const QR_RENDER_SIZE = 150; // Fits inside ~190px dashed circle with margin
+const QR_CY = 840;
+const QR_RENDER_SIZE = 190; // Fits inside ~190px dashed circle with margin
 
 /**
  * Builder ID value slot — in the SYSTEM panel.
@@ -90,20 +89,10 @@ const QR_RENDER_SIZE = 150; // Fits inside ~190px dashed circle with margin
  * is also baked in at x=520, y=744. We render the actual builder ID directly on top
  * of that placeholder to replace it.
  */
-const BUILDER_ID_X = 520;
+const BUILDER_ID_X = 530;
 const BUILDER_ID_Y = 744;
 
-/* ────────────────────────────────────────────────────────────
- * PFP FRAME GEOMETRY (1254×1254)
- * ──────────────────────────────────────────────────────────── */
 
-const PFP_W = 1254;
-const PFP_H = 1254;
-
-/** Photo square — 850×850, centered at (628, 625) */
-const PFP_PHOTO_CX = 628;
-const PFP_PHOTO_CY = 625;
-const PFP_PHOTO_SIZE = 850;
 
 /* ────────────────────────────────────────────────────────────
  * SHARED HELPERS
@@ -296,42 +285,7 @@ export async function renderDarkIdBack(
 	return { builderId };
 }
 
-/* ────────────────────────────────────────────────────────────
- * 3. PFP FRAME — renderPfpFrame()
- * ──────────────────────────────────────────────────────────── */
 
-/**
- * Renders the PFP Frame card (1254×1254).
- * Draw order: background first → photo clipped on top (no transparency dependency).
- * The frame's cream center square is a filled placeholder, not transparent.
- */
-export async function renderPfpFrame(
-	data: SinglePosterData,
-	canvas: HTMLCanvasElement
-): Promise<void> {
-	canvas.width = PFP_W;
-	canvas.height = PFP_H;
-	const ctx = canvas.getContext('2d');
-	if (!ctx) return;
-
-	await document.fonts.ready;
-
-	/* ── 1. Background (pfp-frame.png) ── */
-	const bgImg = await loadImage(PFP_FRAME_SRC);
-	ctx.drawImage(bgImg, 0, 0, PFP_W, PFP_H);
-
-	/* ── 2. User photo — 850×850 square clip, COVER scaled, drawn on top ── */
-	if (data.photoUrl) {
-		try {
-			const photoImg = await loadImage(data.photoUrl);
-			renderPhotoCoverSquare(ctx, photoImg, PFP_PHOTO_CX, PFP_PHOTO_CY, PFP_PHOTO_SIZE);
-		} catch {
-			drawSquareFallback(ctx, data.name, PFP_PHOTO_CX, PFP_PHOTO_CY, PFP_PHOTO_SIZE);
-		}
-	} else {
-		drawSquareFallback(ctx, data.name, PFP_PHOTO_CX, PFP_PHOTO_CY, PFP_PHOTO_SIZE);
-	}
-}
 
 /* ────────────────────────────────────────────────────────────
  * Fallback avatar for square clip areas

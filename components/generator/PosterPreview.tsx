@@ -10,7 +10,6 @@ import {
 import {
 	renderDarkIdFront,
 	renderDarkIdBack,
-	renderPfpFrame,
 } from '@/lib/dark-compositor';
 import { downloadPoster } from '@/lib/downloadPoster';
 import { ShareButton } from './ShareButton';
@@ -30,7 +29,6 @@ interface PosterPreviewProps {
 
 /** Returns the CSS aspect ratio class for each card type */
 function getAspectClass(cardStyle: CardStyle): string {
-	if (cardStyle === 'pfp') return 'aspect-square';
 	return 'aspect-[1024/1536]';
 }
 
@@ -39,7 +37,6 @@ function getStyleSuffix(cardStyle: CardStyle): string | undefined {
 	switch (cardStyle) {
 		case 'dark-id-front': return 'dark-front';
 		case 'dark-id-back': return 'dark-back';
-		case 'pfp': return 'pfp';
 		default: return undefined;
 	}
 }
@@ -207,24 +204,12 @@ async function renderCardByStyle(
 	options: RenderOptions
 ): Promise<void> {
 	switch (cardStyle) {
-		case 'tropical':
-			if (generatorMode === 'single') {
-				await renderBuilderCard(singleData, canvas, options);
-			} else {
-				await renderTeamPosterCanvas(teamData, canvas);
-			}
-			break;
-
 		case 'dark-id-front':
 			await renderDarkIdFront(singleData, canvas, options);
 			break;
 
 		case 'dark-id-back':
 			await renderDarkIdBack(singleData, canvas, options);
-			break;
-
-		case 'pfp':
-			await renderPfpFrame(singleData, canvas);
 			break;
 	}
 }

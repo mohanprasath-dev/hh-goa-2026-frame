@@ -13,7 +13,7 @@ export interface Teammate {
 
 export type GeneratorMode = 'single' | 'team';
 
-export type CardStyle = 'tropical' | 'dark-id-front' | 'dark-id-back' | 'pfp';
+export type CardStyle = 'dark-id-front' | 'dark-id-back';
 
 export interface SinglePosterData {
 	name: string;

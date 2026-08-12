@@ -22,7 +22,7 @@ import type {
 
 export default function GeneratorPage() {
 	const [mode, setMode] = useState<GeneratorMode>('single');
-	const [cardStyle, setCardStyle] = useState<CardStyle>('tropical');
+	const [cardStyle, setCardStyle] = useState<CardStyle>('dark-id-front');
 
 	// Primary Builder state
 	const [builder, setBuilder] = useState<SingleBuilder>({
@@ -61,9 +61,7 @@ export default function GeneratorPage() {
 	};
 
 	/** Whether the current card style needs the text form fields */
-	const needsForm = cardStyle === 'tropical' || cardStyle === 'dark-id-front';
-	/** Whether to show team combine mode (only tropical supports it) */
-	const showTeamMode = cardStyle === 'tropical';
+	const needsForm = cardStyle === 'dark-id-front';
 
 	return (
 		<main className="min-h-screen bg-[#F5F0E1] text-[#0B3D2E] relative overflow-x-hidden pb-16">
@@ -85,37 +83,6 @@ export default function GeneratorPage() {
 				</p>
 			</header>
 
-			{/* Mode Switcher Tabs — only shown for Tropical */}
-			{showTeamMode && (
-				<div className="max-w-md mx-auto px-4 mb-4">
-					<div className="bg-[#0B3D2E]/10 p-1.5 rounded-2xl flex items-center gap-2">
-						<button
-							type="button"
-							onClick={() => setMode('single')}
-							className={`flex-1 min-h-[44px] py-2 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-								mode === 'single'
-									? 'bg-[#0B3D2E] text-[#FFD400] shadow-md'
-									: 'text-[#0B3D2E]/70 hover:text-[#0B3D2E]'
-							}`}
-						>
-							<User className="w-4 h-4" /> Single Builder
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setMode('team')}
-							className={`flex-1 min-h-[44px] py-2 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-								mode === 'team'
-									? 'bg-[#0B3D2E] text-[#FFD400] shadow-md'
-									: 'text-[#0B3D2E]/70 hover:text-[#0B3D2E]'
-							}`}
-						>
-							<Users className="w-4 h-4" /> Team Combine
-						</button>
-					</div>
-				</div>
-			)}
-
 			{/* Generator Layout Grid */}
 			<div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 				{/* Left Column: Form & Photo Inputs (7 cols) */}
@@ -126,8 +93,6 @@ export default function GeneratorPage() {
 							selected={cardStyle}
 							onChange={(style) => {
 								setCardStyle(style);
-								// Reset to single mode for non-tropical styles
-								if (style !== 'tropical') setMode('single');
 							}}
 						/>
 					</div>
@@ -194,13 +159,7 @@ export default function GeneratorPage() {
 						<BuilderForm builderData={builder} onChange={setBuilder} />
 					)}
 
-					{/* Team Combine Mode Additional Inputs — tropical only */}
-					{showTeamMode && mode === 'team' && (
-						<TeamCombine
-							teammates={teammates}
-							onUpdateTeammates={setTeammates}
-						/>
-					)}
+
 				</div>
 
 				{/* Right Column: Live Poster Canvas Preview (5 cols) */}
