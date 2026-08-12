@@ -1,4 +1,4 @@
-import { head, put } from "@vercel/blob";
+import { del, list, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 const credentialPrefix = "builder-credentials";
@@ -22,6 +22,9 @@ function validId(id: string) {
 }
 
 export async function POST(request: Request) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json({ error: "Credential storage is not configured. Add BLOB_READ_WRITE_TOKEN to this Vercel project, then redeploy." }, { status: 503 });
+  }
   try {
     const form = await request.formData();
     const builderId = String(form.get("builderId") || "").trim().toUpperCase().replace("#", "");
@@ -37,10 +40,12 @@ export async function POST(request: Request) {
     }
 
     const [frontBlob, backBlob] = await Promise.all([
-      put(pathFor(builderId, "front.png"), front, { access: "public", addRandomSuffix: false }),
-      put(pathFor(builderId, "back.png"), back, { access: "public", addRandomSuffix: false }),
+      put(pathFor(builderId, "front.png"), front, { access: "public", addRandomSuffix: true }),
+      put(pathFor(builderId, "back.png"), back, { access: "public", addRandomSuffix: true }),
     ]);
     const record: CredentialRecord = { builderId, name, title, generatedAt: new Date().toISOString(), verified: true, frontUrl: frontBlob.url, backUrl: backBlob.url };
+    const existing = await findCredentialFile(builderId, "record.json");
+    if (existing) await del(existing.url);
     await put(pathFor(builderId, "record.json"), JSON.stringify(record), { access: "public", addRandomSuffix: false, contentType: "application/json" });
     return NextResponse.json(record);
   } catch (error) {
@@ -53,11 +58,18 @@ export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id")?.trim().toUpperCase().replace("#", "") || "";
   if (!validId(id)) return NextResponse.json({ error: "Credential not found." }, { status: 404 });
   try {
-    const blob = await head(pathFor(id, "record.json"));
+    const blob = await findCredentialFile(id, "record.json");
+    if (!blob) throw new Error("Record unavailable");
     const response = await fetch(blob.url, { cache: "no-store" });
     if (!response.ok) throw new Error("Record unavailable");
     return NextResponse.json(await response.json());
   } catch {
     return NextResponse.json({ error: "Credential not found." }, { status: 404 });
   }
+}
+
+async function findCredentialFile(id: string, file: string) {
+  const pathname = pathFor(id, file);
+  const result = await list({ prefix: pathname, limit: 10 });
+  return result.blobs.find((blob) => blob.pathname === pathname);
 }
